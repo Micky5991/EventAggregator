@@ -36,19 +36,16 @@ namespace Micky5991.EventAggregator.Subscriptions
 
             if (_filter != null)
             {
-                bool filterResult;
                 try
                 {
-                    filterResult = await _filter(convertedEventData);
+                    if (await _filter(convertedEventData) == false)
+                    {
+                        return;
+                    }
                 }
                 catch (Exception e)
                 {
                     _logger.LogError($"An error occured during filter check of event \"{typeof(T)}\"", e);
-                }
-
-                if (filterResult == false)
-                {
-                    return;
                 }
             }
 
