@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Subscriptions;
@@ -14,6 +15,9 @@ namespace Micky5991.EventAggregator.Services
         private readonly ILogger<IEventAggregator> _logger;
 
         private readonly ConcurrentDictionary<Type, List<IInternalSubscription>> _subscriptions = new ConcurrentDictionary<Type, List<IInternalSubscription>>();
+        private readonly ConcurrentDictionary<Type, List<IInternalSubscription>> _orderedSubscriptions = new ConcurrentDictionary<Type, List<IInternalSubscription>>();
+
+        private readonly ReaderWriterLockSlim _readerWriterLock = new ReaderWriterLockSlim();
 
         public EventAggregatorService(ILogger<IEventAggregator> logger)
         {
@@ -40,16 +44,21 @@ namespace Micky5991.EventAggregator.Services
 
         private ISubscription AddSubscription<T>(IInternalSubscription subscription)
         {
+            var eventType = typeof(T);
+
+            _readerWriterLock.EnterWriteLock();
             try
             {
-                _subscriptions.AddOrUpdate(typeof(T), new List<IInternalSubscription>{ subscription }, (type, list) =>
+                if (_subscriptions.TryGetValue(eventType, out var subscriptions) == false)
                 {
-                    lock (list)
-                    {
-                        list.Add(subscription);
-                        return list;
-                    }
-                });
+                    _subscriptions.TryAdd(eventType, new List<IInternalSubscription> {subscription});
+
+                    return subscription;
+                }
+
+                subscriptions.Add(subscription);
+
+                UpdateOrderedSubscriptionsCache(eventType);
 
                 return subscription;
             }
@@ -58,6 +67,10 @@ namespace Micky5991.EventAggregator.Services
                 _logger.LogError($"An error occured during subscription of event \"{typeof(T)}\"", e);
 
                 return null;
+            }
+            finally
+            {
+                _readerWriterLock.ExitWriteLock();
             }
         }
 
@@ -81,10 +94,19 @@ namespace Micky5991.EventAggregator.Services
 
         private void PublishByType(Type eventType, IEvent eventData)
         {
-            var subscriptions = GetOrderedSubscriptionSnapshot(eventType);
-            if (subscriptions == null)
+            List<IInternalSubscription> subscriptions;
+
+            _readerWriterLock.EnterReadLock();
+            try
             {
-                return;
+                if (_orderedSubscriptions.TryGetValue(eventType, out subscriptions) == false)
+                {
+                    return;
+                }
+            }
+            finally
+            {
+                _readerWriterLock.ExitReadLock();
             }
 
             foreach (var subscription in subscriptions)
@@ -102,28 +124,34 @@ namespace Micky5991.EventAggregator.Services
 
         public async Task<T> PublishAsync<T>(T eventData) where T : IEvent
         {
-            await Task.Run(async () =>
+            try
             {
-                try
-                {
-                    await PublishByTypeAsync(eventData.GetType(), eventData);
-                    await PublishByTypeAsync(typeof(IEvent), eventData);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError($"An error occured during publish of event \"{typeof(T)}\"", e);
-                }
-            });
+                await PublishByTypeAsync(eventData.GetType(), eventData);
+                await PublishByTypeAsync(typeof(IEvent), eventData);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"An error occured during publish of event \"{typeof(T)}\"", e);
+            }
 
             return eventData;
         }
 
         private async Task PublishByTypeAsync(Type eventType, IEvent eventData)
         {
-            var subscriptions = GetOrderedSubscriptionSnapshot(eventType);
-            if (subscriptions == null)
+            List<IInternalSubscription> subscriptions;
+
+            _readerWriterLock.EnterReadLock();
+            try
             {
-                return;
+                if (_orderedSubscriptions.TryGetValue(eventType, out subscriptions) == false)
+                {
+                    return;
+                }
+            }
+            finally
+            {
+                _readerWriterLock.ExitReadLock();
             }
 
             foreach (var subscription in subscriptions)
@@ -139,37 +167,43 @@ namespace Micky5991.EventAggregator.Services
             }
         }
 
-        private List<IInternalSubscription> GetOrderedSubscriptionSnapshot(Type eventType)
+        private void UpdateOrderedSubscriptionsCache(Type eventType)
         {
             if (!_subscriptions.TryGetValue(eventType, out var typeSubscriptions))
-            {
-                return null;
-            }
-
-            lock (typeSubscriptions)
-            {
-                return new List<IInternalSubscription>(typeSubscriptions.OrderBy(s => s.Priority));
-            }
-        }
-
-        public void Unsubscribe(IInternalSubscription internalSubscription)
-        {
-            if (!_subscriptions.TryGetValue(internalSubscription.EventType, out var typeSubscriptions))
             {
                 return;
             }
 
-            lock (typeSubscriptions)
-            {
-                typeSubscriptions.Remove(internalSubscription);
+            _orderedSubscriptions[eventType] = new List<IInternalSubscription>(typeSubscriptions.OrderBy(s => s.Priority));
+        }
 
-                if (typeSubscriptions.Any())
+        public void Unsubscribe(IInternalSubscription subscription)
+        {
+            _readerWriterLock.EnterWriteLock();
+            try
+            {
+                var eventType = subscription.EventType;
+
+                if (_subscriptions.TryGetValue(subscription.EventType, out var typeSubscriptions) == false)
                 {
                     return;
                 }
 
-                _subscriptions.TryRemove(internalSubscription.EventType, out _);
+                typeSubscriptions.Remove(subscription);
+
+                if (typeSubscriptions.Any() == false)
+                {
+                    _subscriptions.TryRemove(subscription.EventType, out _);
+                }
+
+                UpdateOrderedSubscriptionsCache(eventType);
             }
+            finally
+            {
+                _readerWriterLock.ExitWriteLock();
+            }
+
+
         }
     }
 }
