@@ -33,7 +33,7 @@ namespace Micky5991.EventAggregator.Services
                 throw new ArgumentNullException(nameof(filter));
             }
 
-            var subscription = new FilterableSubscription<T>(asyncEventCallback, filter, priority, this, _logger);
+            var subscription = new Subscription<T>(asyncEventCallback, filter, priority, this, _logger);
 
             return AddSubscription<T>(subscription);
         }
