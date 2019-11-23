@@ -2,11 +2,15 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Subscriptions;
 using Microsoft.Extensions.Logging;
+
+[assembly: InternalsVisibleTo("EventAggregator.Tests")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 namespace Micky5991.EventAggregator.Services
 {
@@ -177,7 +181,7 @@ namespace Micky5991.EventAggregator.Services
             _orderedSubscriptions[eventType] = new List<IInternalSubscription>(typeSubscriptions.OrderBy(s => s.Priority));
         }
 
-        public void Unsubscribe(IInternalSubscription subscription)
+        internal virtual void Unsubscribe(IInternalSubscription subscription)
         {
             _readerWriterLock.EnterWriteLock();
             try
