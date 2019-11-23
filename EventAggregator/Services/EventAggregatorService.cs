@@ -23,6 +23,10 @@ namespace Micky5991.EventAggregator.Services
 
         private readonly ReaderWriterLockSlim _readerWriterLock = new ReaderWriterLockSlim();
 
+        internal ConcurrentDictionary<Type, List<IInternalSubscription>> Subscriptions => _subscriptions;
+        internal ConcurrentDictionary<Type, List<IInternalSubscription>> OrderedSubscriptions => _orderedSubscriptions;
+
+
         public EventAggregatorService(ILogger<IEventAggregator> logger)
         {
             _logger = logger;
@@ -34,11 +38,6 @@ namespace Micky5991.EventAggregator.Services
             if (asyncEventCallback == null)
             {
                 throw new ArgumentNullException(nameof(asyncEventCallback));
-            }
-
-            if (filter == null)
-            {
-                throw new ArgumentNullException(nameof(filter));
             }
 
             var subscription = new Subscription<T>(asyncEventCallback, filter, priority, this, _logger);

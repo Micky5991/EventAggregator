@@ -1,3 +1,7 @@
+using System.Threading.Tasks;
+using EventAggregator.Tests.TestClasses;
+using FluentAssertions;
+using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Micky5991.EventAggregator.Services;
@@ -26,6 +30,20 @@ namespace EventAggregator.Tests
             _eventAggregator = null;
 
             _loggerMock = null;
+        }
+
+        [TestMethod]
+        public void SubscribeToEventWillReturnSubscriptionObject()
+        {
+            var result = _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal);
+
+            result.Should().NotBeNull();
+            result.Should().BeAssignableTo<ISubscription>();
+        }
+
+        private Task TestCallback(TestEvent testEvent)
+        {
+            return Task.CompletedTask;
         }
     }
 }
