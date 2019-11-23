@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard1.3</TargetFramework>
+        <AssemblyName>Micky5991.EventAggregator</AssemblyName>
+        <RootNamespace>Micky5991.EventAggregator</RootNamespace>
+        <LangVersion>8</LangVersion>
+    </PropertyGroup>
+
+</Project>
