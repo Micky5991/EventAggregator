@@ -95,7 +95,7 @@ namespace EventAggregator.Tests
         [TestMethod]
         private async Task ThrowingExceptionInFilterWillBeCatchedAndLogged()
         {
-            async Task<bool> Filter(TestEvent eventData)
+            Task<bool> Filter(TestEvent eventData)
             {
                 throw new TestException();
             }
@@ -114,9 +114,9 @@ namespace EventAggregator.Tests
         [TestMethod]
         private async Task ThrowingExceptionInCallbackWillBeCatchedAndLogged()
         {
-            async Task Callback(TestEvent eventData)
+            Task Callback(TestEvent eventData)
             {
-                throw new TestException();
+                return Task.FromException(new TestException());
             }
 
             _logger.Setup(x => x.LogError(It.IsAny<string>()));
@@ -159,9 +159,11 @@ namespace EventAggregator.Tests
             return new Subscription<T>(callback, filter, priority, _eventAggregator.Object, _logger.Object);
         }
 
-        private async Task IncreaseAmount(TestEvent eventData)
+        private Task IncreaseAmount(TestEvent eventData)
         {
             _calledAmount++;
+
+            return Task.CompletedTask;
         }
 
     }

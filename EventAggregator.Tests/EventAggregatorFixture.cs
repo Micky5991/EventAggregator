@@ -168,8 +168,6 @@ namespace EventAggregator.Tests
             Task Callback(IEvent eventData)
             {
                 throw new TestException();
-
-                return Task.CompletedTask;
             }
 
             _eventAggregator.Subscribe<IEvent>(Callback, null, EventPriority.Normal);
