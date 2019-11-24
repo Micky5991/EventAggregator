@@ -56,6 +56,8 @@ namespace Micky5991.EventAggregator.Services
                 {
                     _subscriptions.TryAdd(eventType, new List<IInternalSubscription> {subscription});
 
+                    UpdateOrderedSubscriptionsCache(eventType);
+
                     return subscription;
                 }
 
@@ -172,8 +174,10 @@ namespace Micky5991.EventAggregator.Services
 
         private void UpdateOrderedSubscriptionsCache(Type eventType)
         {
-            if (!_subscriptions.TryGetValue(eventType, out var typeSubscriptions))
+            if (_subscriptions.TryGetValue(eventType, out var typeSubscriptions) == false)
             {
+                _orderedSubscriptions.TryRemove(eventType, out _);
+
                 return;
             }
 

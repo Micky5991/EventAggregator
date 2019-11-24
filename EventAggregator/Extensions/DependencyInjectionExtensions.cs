@@ -7,9 +7,7 @@ namespace Micky5991.EventAggregator.Extensions
     {
         public static IServiceCollection AddEventAggregator(this IServiceCollection serviceCollection)
         {
-            serviceCollection.AddSingleton<IEventAggregator, Services.EventAggregatorService>();
-
-            return serviceCollection;
+            return serviceCollection.AddSingleton<IEventAggregator, Services.EventAggregatorService>();
         }
     }
 }

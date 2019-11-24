@@ -1,5 +1,8 @@
+using System;
 using System.Threading.Tasks;
+using EventAggregator.Tests.Exceptions;
 using EventAggregator.Tests.TestClasses;
+using FluentAssertions;
 using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Services;
@@ -89,10 +92,71 @@ namespace EventAggregator.Tests
             _eventAggregator.Verify(x => x.Unsubscribe(subscription), Times.Once);
         }
 
-        private Subscription<T> BuildSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback, EventAggregatorDelegates.AsyncEventFilter<T> filter)
+        [TestMethod]
+        private async Task ThrowingExceptionInFilterWillBeCatchedAndLogged()
+        {
+            async Task<bool> Filter(TestEvent eventData)
+            {
+                throw new TestException();
+            }
+
+            _logger.Setup(x => x.LogError(It.IsAny<string>()));
+
+            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, Filter);
+
+            Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
+
+            await act.Should().NotThrowAsync();
+
+            _logger.Verify(x => x.LogError(It.IsAny<string>()), Times.Once);
+        }
+
+        [TestMethod]
+        private async Task ThrowingExceptionInCallbackWillBeCatchedAndLogged()
+        {
+            async Task Callback(TestEvent eventData)
+            {
+                throw new TestException();
+            }
+
+            _logger.Setup(x => x.LogError(It.IsAny<string>()));
+
+            var subscription = BuildSubscription<TestEvent>(Callback, null);
+
+            Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
+
+            await act.Should().NotThrowAsync();
+
+            _logger.Verify(x => x.LogError(It.IsAny<string>()), Times.Once);
+        }
+
+        [DataTestMethod]
+        [DataRow(EventPriority.Highest)]
+        [DataRow(EventPriority.High)]
+        [DataRow(EventPriority.Normal)]
+        [DataRow(EventPriority.Low)]
+        [DataRow(EventPriority.Lowest)]
+        [DataRow(EventPriority.Monitor)]
+        public void PriorityWillBeCorrectlySetup(EventPriority priority)
+        {
+            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null, priority);
+
+            subscription.Priority.Should().Be(priority);
+        }
+
+        [TestMethod]
+        public void EventTypeWillBeSetToGenericTypeParameter()
+        {
+            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null);
+
+            subscription.EventType.Should().Be(typeof(TestEvent));
+        }
+
+        private Subscription<T> BuildSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
+            EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority = EventPriority.Normal)
             where T : IEvent
         {
-            return new Subscription<T>(callback, filter, EventPriority.Normal, _eventAggregator.Object, _logger.Object);
+            return new Subscription<T>(callback, filter, priority, _eventAggregator.Object, _logger.Object);
         }
 
         private async Task IncreaseAmount(TestEvent eventData)
