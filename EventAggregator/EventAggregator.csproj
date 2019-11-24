@@ -11,6 +11,9 @@
         <Description>Implements the EventAggregator pattern to subscribe and publish events in a type-safe manner.</Description>
         <PackageProjectUrl>https://github.com/Micky5991/EventAggregator</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <Copyright>2019 Micky5991</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
