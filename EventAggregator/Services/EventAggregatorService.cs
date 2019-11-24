@@ -181,7 +181,7 @@ namespace Micky5991.EventAggregator.Services
                 return;
             }
 
-            _orderedSubscriptions[eventType] = new List<IInternalSubscription>(typeSubscriptions.OrderBy(s => s.Priority));
+            _orderedSubscriptions[eventType] = new List<IInternalSubscription>(typeSubscriptions.OrderByDescending(s => s.Priority));
         }
 
         internal virtual void Unsubscribe(IInternalSubscription subscription)

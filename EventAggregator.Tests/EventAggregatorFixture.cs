@@ -78,7 +78,7 @@ namespace EventAggregator.Tests
             _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Low);
 
             var cache = _eventAggregator.OrderedSubscriptions[typeof(TestEvent)];
-            cache.Should().BeInAscendingOrder(x => x.Priority);
+            cache.Should().BeInDescendingOrder(x => x.Priority);
         }
 
         [TestMethod]
