@@ -42,10 +42,27 @@ namespace Micky5991.EventAggregator.Services
 
             var subscription = new AsyncSubscription<T>(asyncEventCallback, filter, priority, this, _logger);
 
-            return AddSubscription<T>(subscription);
+            var success = AddSubscription<T>(subscription);
+
+            return success ? subscription : null;
         }
 
-        private ISubscription AddSubscription<T>(IInternalSubscription subscription)
+        public ISyncSubscription SubscribeSync<T>(EventAggregatorDelegates.EventCallback<T> eventCallback, EventAggregatorDelegates.EventFilter<T> filter = null,
+            EventPriority priority = EventPriority.Normal) where T : IEvent
+        {
+            if (eventCallback == null)
+            {
+                throw new ArgumentNullException(nameof(eventCallback));
+            }
+
+            var subscription = new SyncSubscription<T>(eventCallback, filter, priority, this, _logger);
+
+            var success = AddSubscription<T>(subscription);
+
+            return success ? subscription : null;
+        }
+
+        private bool AddSubscription<T>(IInternalSubscription subscription)
         {
             var eventType = typeof(T);
 
@@ -58,20 +75,20 @@ namespace Micky5991.EventAggregator.Services
 
                     UpdateOrderedSubscriptionsCache(eventType);
 
-                    return subscription;
+                    return true;
                 }
 
                 subscriptions.Add(subscription);
 
                 UpdateOrderedSubscriptionsCache(eventType);
 
-                return subscription;
+                return true;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, $"An error occured during subscription of event \"{typeof(T)}\"");
 
-                return null;
+                return false;
             }
             finally
             {
@@ -85,8 +102,8 @@ namespace Micky5991.EventAggregator.Services
             {
                 try
                 {
-                    PublishByType(eventData.GetType(), eventData);
-                    PublishByType(typeof(IEvent), eventData);
+                    PublishByType<IInternalSubscription>(eventData.GetType(), eventData);
+                    PublishByType<IInternalSubscription>(typeof(IEvent), eventData);
                 }
                 catch (Exception e)
                 {
@@ -97,7 +114,22 @@ namespace Micky5991.EventAggregator.Services
             return eventData;
         }
 
-        private void PublishByType(Type eventType, IEvent eventData)
+        public T PublishSync<T>(T eventData) where T : IEvent
+        {
+            try
+            {
+                PublishByType<IInternalSyncSubscription>(eventData.GetType(), eventData);
+                PublishByType<IInternalSyncSubscription>(typeof(IEvent), eventData);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"An error occured during sync publish of event \"{typeof(T)}\"");
+            }
+
+            return eventData;
+        }
+
+        private void PublishByType<T>(Type eventType, IEvent eventData) where T : IInternalSubscription
         {
             List<IInternalSubscription> subscriptions;
 
@@ -116,6 +148,11 @@ namespace Micky5991.EventAggregator.Services
 
             foreach (var subscription in subscriptions)
             {
+                if (subscription is T == false)
+                {
+                    continue;
+                }
+
                 try
                 {
                     subscription.TriggerAsync(eventData);
