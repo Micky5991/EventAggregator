@@ -39,7 +39,7 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void SubscribeToEventWillReturnSubscriptionObject()
         {
-            var result = _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal);
+            var result = _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Normal);
 
             result.Should().NotBeNull();
             result.Should().BeAssignableTo<ISubscription>();
@@ -55,7 +55,7 @@ namespace EventAggregator.Tests
 
             for (var i = 0; i < amount; i++)
             {
-                subscriptions.Add(_eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal));
+                subscriptions.Add(_eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Normal));
             }
 
             var cache = _eventAggregator.OrderedSubscriptions;
@@ -73,9 +73,9 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void SubscriptionsShouldBeOrderedInCache()
         {
-            _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal);
-            _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.High);
-            _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Low);
+            _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Normal);
+            _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.High);
+            _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Low);
 
             var cache = _eventAggregator.OrderedSubscriptions[typeof(TestEvent)];
             cache.Should().BeInDescendingOrder(x => x.Priority);
@@ -92,7 +92,7 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void UnsubscribeSubscriptionWillRemoveFromLists()
         {
-            var subscription = (IInternalSubscription) _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal);
+            var subscription = (IInternalSubscription) _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Normal);
 
             _eventAggregator.Unsubscribe(subscription);
 
@@ -106,8 +106,8 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void UnsubscribeWithUnknownSubscriptionWillDontChangeAnything()
         {
-            var removedSubscription = (IInternalSubscription) _eventAggregator.Subscribe<TestEvent>(TestCallback, null, EventPriority.Normal);
-            _eventAggregator.Subscribe<OtherTestEvent>(OtherTestCallback, null, EventPriority.Normal);
+            var removedSubscription = (IInternalSubscription) _eventAggregator.Subscribe<TestEvent>(TestCallbackAsync, null, EventPriority.Normal);
+            _eventAggregator.Subscribe<OtherTestEvent>(OtherTestCallbackAsync, null, EventPriority.Normal);
 
             var subscriptions = _eventAggregator.Subscriptions;
             var cache = _eventAggregator.OrderedSubscriptions;
@@ -177,12 +177,12 @@ namespace EventAggregator.Tests
             await act.Should().NotThrowAsync();
         }
 
-        private Task TestCallback(TestEvent testEvent)
+        private Task TestCallbackAsync(TestEvent testEvent)
         {
             return Task.CompletedTask;
         }
 
-        private Task OtherTestCallback(OtherTestEvent testEvent)
+        private Task OtherTestCallbackAsync(OtherTestEvent testEvent)
         {
             return Task.CompletedTask;
         }
