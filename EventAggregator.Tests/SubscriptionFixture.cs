@@ -8,6 +8,7 @@ using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Services;
 using Micky5991.EventAggregator.Subscriptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -18,14 +19,15 @@ namespace EventAggregator.Tests
     {
         private int _calledAmount;
 
-        private Mock<ILogger<IEventAggregator>> _logger;
         private Mock<EventAggregatorService> _eventAggregator;
+
+        private ILogger<IEventAggregator> _logger;
 
         [TestInitialize]
         public void Setup()
         {
-            _logger = new Mock<ILogger<IEventAggregator>>();
-            _eventAggregator = new Mock<EventAggregatorService>(_logger.Object);
+            _logger = new NullLogger<IEventAggregator>();
+            _eventAggregator = new Mock<EventAggregatorService>(_logger);
         }
 
         [TestCleanup]
@@ -93,41 +95,33 @@ namespace EventAggregator.Tests
         }
 
         [TestMethod]
-        private async Task ThrowingExceptionInFilterWillBeCatchedAndLogged()
+        public async Task ThrowingExceptionInFilterWillBeCatchedAndLogged()
         {
             Task<bool> Filter(TestEvent eventData)
             {
                 throw new TestException();
             }
 
-            _logger.Setup(x => x.LogError(It.IsAny<string>()));
-
             var subscription = BuildSubscription<TestEvent>(IncreaseAmount, Filter);
 
             Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
 
             await act.Should().NotThrowAsync();
-
-            _logger.Verify(x => x.LogError(It.IsAny<string>()), Times.Once);
         }
 
         [TestMethod]
-        private async Task ThrowingExceptionInCallbackWillBeCatchedAndLogged()
+        public async Task ThrowingExceptionInCallbackWillBeCatchedAndLogged()
         {
             Task Callback(TestEvent eventData)
             {
                 return Task.FromException(new TestException());
             }
 
-            _logger.Setup(x => x.LogError(It.IsAny<string>()));
-
             var subscription = BuildSubscription<TestEvent>(Callback, null);
 
             Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
 
             await act.Should().NotThrowAsync();
-
-            _logger.Verify(x => x.LogError(It.IsAny<string>()), Times.Once);
         }
 
         [DataTestMethod]
@@ -156,7 +150,7 @@ namespace EventAggregator.Tests
             EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority = EventPriority.Normal)
             where T : IEvent
         {
-            return new Subscription<T>(callback, filter, priority, _eventAggregator.Object, _logger.Object);
+            return new Subscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
         }
 
         private Task IncreaseAmount(TestEvent eventData)
