@@ -7,5 +7,8 @@ namespace Micky5991.EventAggregator
     {
         public delegate Task AsyncEventCallback<T>(T eventData) where T : IEvent;
         public delegate Task<bool> AsyncEventFilter<T>(T eventData) where T : IEvent;
+
+        public delegate void EventCallback<T>(T eventData) where T : IEvent;
+        public delegate bool EventFilter<T>(T eventData) where T : IEvent;
     }
 }
