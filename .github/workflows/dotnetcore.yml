@@ -51,14 +51,14 @@ jobs:
       run: dotnet test --verbosity normal
 
     - name: Save NuGet artifact
-      if: steps.vars.outputs.is_tag == 'true' && success()
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v2-preview
       with:
         name: nuget-package
         path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ steps.vars.outputs.ref }}.nupkg
 
     - name: Create Release
-      if: steps.vars.outputs.is_tag == 'true' && success()
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -70,7 +70,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
-      if: steps.vars.outputs.is_tag == 'true' && success()
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
