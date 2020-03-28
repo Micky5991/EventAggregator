@@ -69,7 +69,7 @@ namespace Micky5991.EventAggregator.Services
             }
             catch (Exception e)
             {
-                _logger.LogError($"An error occured during subscription of event \"{typeof(T)}\"", e);
+                _logger.LogError(e, $"An error occured during subscription of event \"{typeof(T)}\"");
 
                 return null;
             }
@@ -90,7 +90,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"An error occured during publish of event \"{typeof(T)}\"", e);
+                    _logger.LogError(e, $"An error occured during publish of event \"{typeof(T)}\"");
                 }
             });
 
@@ -122,7 +122,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"An error occured during publish of event \"{eventType}\"", e);
+                    _logger.LogError(e, $"An error occured during publish of event \"{eventType}\"");
                 }
             }
         }
@@ -136,7 +136,7 @@ namespace Micky5991.EventAggregator.Services
             }
             catch (Exception e)
             {
-                _logger.LogError($"An error occured during publish of event \"{typeof(T)}\"", e);
+                _logger.LogError(e, $"An error occured during publish of event \"{typeof(T)}\"");
             }
 
             return eventData;
@@ -167,7 +167,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"An error occured during publish of event \"{eventType}\"", e);
+                    _logger.LogError(e, $"An error occured during publish of event \"{eventType}\"");
                 }
             }
         }
