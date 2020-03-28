@@ -42,7 +42,7 @@ namespace EventAggregator.Tests
         [TestMethod]
         public async Task TriggeringWithNulledFilterWillIgnoreFilter()
         {
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
 
             await subscription.TriggerAsync(new TestEvent());
 
@@ -55,7 +55,7 @@ namespace EventAggregator.Tests
         [DataRow(3)]
         public async Task TriggeringCertainAmountsOfEventsWillExecuteSameAmount(int amount)
         {
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
 
             for (var i = 0; i < amount; i++)
             {
@@ -75,7 +75,7 @@ namespace EventAggregator.Tests
                 return Task.FromResult(filterResult);
             }
 
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, Filter);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, Filter);
 
             await subscription.TriggerAsync(new TestEvent());
 
@@ -85,7 +85,7 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void DisposingSubscriptionWillUnregisterFromAggregator()
         {
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
 
             _eventAggregator.Setup(x => x.Unsubscribe(subscription));
 
@@ -102,7 +102,7 @@ namespace EventAggregator.Tests
                 throw new TestException();
             }
 
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, Filter);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, Filter);
 
             Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
 
@@ -117,7 +117,7 @@ namespace EventAggregator.Tests
                 return Task.FromException(new TestException());
             }
 
-            var subscription = BuildSubscription<TestEvent>(Callback, null);
+            var subscription = BuildAsyncSubscription<TestEvent>(Callback, null);
 
             Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
 
@@ -133,7 +133,7 @@ namespace EventAggregator.Tests
         [DataRow(EventPriority.Monitor)]
         public void PriorityWillBeCorrectlySetup(EventPriority priority)
         {
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null, priority);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null, priority);
 
             subscription.Priority.Should().Be(priority);
         }
@@ -141,12 +141,12 @@ namespace EventAggregator.Tests
         [TestMethod]
         public void EventTypeWillBeSetToGenericTypeParameter()
         {
-            var subscription = BuildSubscription<TestEvent>(IncreaseAmount, null);
+            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
 
             subscription.EventType.Should().Be(typeof(TestEvent));
         }
 
-        private AsyncSubscription<T> BuildSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
+        private AsyncSubscription<T> BuildAsyncSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
             EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority = EventPriority.Normal)
             where T : IEvent
         {
