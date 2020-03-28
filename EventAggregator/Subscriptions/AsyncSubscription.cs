@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Micky5991.EventAggregator.Subscriptions
 {
-    internal class Subscription<T> : ISubscription, IInternalSubscription where T : IEvent
+    internal class AsyncSubscription<T> : ISubscription, IInternalSubscription where T : IEvent
     {
         private readonly EventAggregatorService _eventAggregatorService;
         private readonly ILogger<IEventAggregator> _logger;
@@ -18,7 +18,7 @@ namespace Micky5991.EventAggregator.Subscriptions
 
         public Type EventType { get; } = typeof(T);
 
-        internal Subscription(EventAggregatorDelegates.AsyncEventCallback<T> callback,
+        internal AsyncSubscription(EventAggregatorDelegates.AsyncEventCallback<T> callback,
             EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority,
             EventAggregatorService eventAggregatorService, ILogger<IEventAggregator> logger)
         {

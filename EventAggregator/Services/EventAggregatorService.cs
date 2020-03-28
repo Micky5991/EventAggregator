@@ -40,7 +40,7 @@ namespace Micky5991.EventAggregator.Services
                 throw new ArgumentNullException(nameof(asyncEventCallback));
             }
 
-            var subscription = new Subscription<T>(asyncEventCallback, filter, priority, this, _logger);
+            var subscription = new AsyncSubscription<T>(asyncEventCallback, filter, priority, this, _logger);
 
             return AddSubscription<T>(subscription);
         }
