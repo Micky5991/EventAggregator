@@ -146,11 +146,11 @@ namespace EventAggregator.Tests
             subscription.EventType.Should().Be(typeof(TestEvent));
         }
 
-        private Subscription<T> BuildSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
+        private AsyncSubscription<T> BuildSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
             EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority = EventPriority.Normal)
             where T : IEvent
         {
-            return new Subscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
+            return new AsyncSubscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
         }
 
         private Task IncreaseAmount(TestEvent eventData)
