@@ -9,7 +9,7 @@ namespace Micky5991.EventAggregator.Subscriptions
     internal class AsyncSubscription<T> : ISubscription, IInternalSubscription where T : IEvent
     {
         private readonly EventAggregatorService _eventAggregatorService;
-        private readonly ILogger<IEventAggregator> _logger;
+        protected readonly ILogger<IEventAggregator> _logger;
 
         private readonly EventAggregatorDelegates.AsyncEventCallback<T> _callback;
         private readonly EventAggregatorDelegates.AsyncEventFilter<T> _filter;
