@@ -45,7 +45,7 @@ namespace Micky5991.EventAggregator.Subscriptions
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"An error occured during filter check of event \"{typeof(T)}\"", e);
+                    _logger.LogError(e, $"An error occured during filter check of event \"{typeof(T)}\"");
                 }
             }
 
@@ -55,7 +55,7 @@ namespace Micky5991.EventAggregator.Subscriptions
             }
             catch (Exception e)
             {
-                _logger.LogError($"An error occured during processing of event \"{typeof(T)}\".", e);
+                _logger.LogError(e, $"An error occured during processing of event \"{typeof(T)}\".");
             }
         }
 
