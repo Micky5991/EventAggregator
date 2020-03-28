@@ -167,5 +167,10 @@ namespace EventAggregator.Tests
             return Task.CompletedTask;
         }
 
+        private void IncreaseAmountSync(TestEvent eventData)
+        {
+            _calledAmount++;
+        }
+
     }
 }
