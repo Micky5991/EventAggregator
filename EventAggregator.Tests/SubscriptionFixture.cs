@@ -153,6 +153,13 @@ namespace EventAggregator.Tests
             return new AsyncSubscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
         }
 
+        private AsyncSubscription<T> BuildSyncSubscription<T>(EventAggregatorDelegates.EventCallback<T> callback,
+            EventAggregatorDelegates.EventFilter<T> filter, EventPriority priority = EventPriority.Normal)
+            where T : IEvent
+        {
+            return new SyncSubscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
+        }
+
         private Task IncreaseAmount(TestEvent eventData)
         {
             _calledAmount++;
