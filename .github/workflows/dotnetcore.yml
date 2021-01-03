@@ -46,7 +46,7 @@ jobs:
         echo ::set-output name=is_tag::${{ startsWith(github.ref, 'refs/tags/') }}
 
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore -f ${{ matrix.coreapp }}
 
     - name: Build
       if: steps.vars.outputs.is_tag == 'false'
