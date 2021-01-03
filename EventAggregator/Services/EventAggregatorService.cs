@@ -86,7 +86,7 @@ namespace Micky5991.EventAggregator.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"An error occured during subscription of event \"{typeof(T)}\"");
+                _logger.LogError(EventAggregatorErrors.ErrorDuringEventSubscription, e, $"An error occured during subscription of event \"{typeof(T)}\"");
 
                 return false;
             }
@@ -107,7 +107,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"An error occured during publish of event \"{typeof(T)}\"");
+                    _logger.LogError(EventAggregatorErrors.ErrorDuringEventPublish, e, $"An error occured during publish of event \"{typeof(T)}\"");
                 }
             });
 
@@ -123,7 +123,7 @@ namespace Micky5991.EventAggregator.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"An error occured during sync publish of event \"{typeof(T)}\"");
+                _logger.LogError(EventAggregatorErrors.ErrorDuringEventPublish, e, $"An error occured during sync publish of event \"{typeof(T)}\"");
             }
 
             return eventData;
@@ -159,7 +159,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"An error occured during publish of event \"{eventType}\"");
+                    _logger.LogError(EventAggregatorErrors.ErrorDuringEventPublish, e, $"An error occured during publish of event \"{eventType}\"");
                 }
             }
         }
@@ -173,7 +173,7 @@ namespace Micky5991.EventAggregator.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"An error occured during publish of event \"{typeof(T)}\"");
+                _logger.LogError(EventAggregatorErrors.ErrorDuringEventPublish, e, $"An error occured during publish of event \"{typeof(T)}\"");
             }
 
             return eventData;
@@ -204,7 +204,7 @@ namespace Micky5991.EventAggregator.Services
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"An error occured during publish of event \"{eventType}\"");
+                    _logger.LogError(EventAggregatorErrors.ErrorDuringEventPublish, e, $"An error occured during publish of event \"{eventType}\"");
                 }
             }
         }
