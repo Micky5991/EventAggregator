@@ -21,14 +21,15 @@ jobs:
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
+        dotnet: [ 2.1.811, 3.1.404, 5.0.101 ]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Setup .NET Core
+    - name: Setup .NET ${{ matrix.dotnet }}
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.201
+        dotnet-version: ${{ matrix.dotnet }}
 
     - name: Set general reference
       id: vars
@@ -51,14 +52,14 @@ jobs:
       run: dotnet test --verbosity normal
 
     - name: Save NuGet artifact
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
       uses: actions/upload-artifact@v2-preview
       with:
         name: nuget-package
         path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ steps.vars.outputs.ref }}.nupkg
 
     - name: Create Release
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -70,7 +71,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest'
+      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
