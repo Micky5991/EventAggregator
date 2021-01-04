@@ -14,20 +14,35 @@ on:
 
 
 jobs:
+  variables:
+    name: Create variables
+    outputs:
+      istag: ${{ steps.vars.outputs.is_tag }}
+      ref: ${{ steps.vars.outputs.ref }}
+
+    steps:
+
+      - id: vars
+        run: |
+          echo ::set-output name=ref::${GITHUB_REF#refs/*/}
+          echo ::set-output name=is_tag::${{ startsWith(github.ref, 'refs/tags/') }}
+
   build:
+    name: Build
+    needs: variables
 
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
-        dotnet: [ 2.1.811, 3.1.404, 5.0.101 ]
+        dotnet: [ 2.1.x, 3.1.x, 5.0.x ]
         include:
-          - dotnet: 2.1.811
+          - dotnet: 2.1.x
             coreapp: netcoreapp2.1
-          - dotnet: 3.1.404
+          - dotnet: 3.1.x
             coreapp: netcoreapp3.1
-          - dotnet: 5.0.101
+          - dotnet: 5.0.x
             coreapp: net5.0
 
 
@@ -39,53 +54,58 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet }}
 
-    - name: Set general reference
-      id: vars
-      run: |
-        echo ::set-output name=ref::${GITHUB_REF#refs/*/}
-        echo ::set-output name=is_tag::${{ startsWith(github.ref, 'refs/tags/') }}
-
     - name: Install dependencies
-      run: dotnet restore -f ${{ matrix.coreapp }}
+      run: dotnet restore
 
     - name: Build
-      if: steps.vars.outputs.is_tag == 'false'
-      run: dotnet build --configuration Release --no-restore
+      if: needs.variables.istag == 'false'
+      run: dotnet build --configuration Release --no-restore -f
 
-    - name: Build with version ${{ steps.vars.outputs.ref }}
-      if: steps.vars.outputs.is_tag == 'true'
-      run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.vars.outputs.ref }} -p:PackageVersion=${{ steps.vars.outputs.ref }}
+    - name: Build with version ${{ needs.variables.ref }}
+      if: needs.variables.istag == 'true'
+      run: dotnet build --configuration Release --no-restore -p:Version=${{ needs.variables.ref }} -p:PackageVersion=${{ needs.variables.ref }}
 
     - name: Test for ${{ matrix.coreapp }}
       run: dotnet test -v normal -f ${{ matrix.coreapp }}
 
     - name: Save NuGet artifact
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
+      if: success() && needs.variables.istag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.x'
       uses: actions/upload-artifact@v2-preview
       with:
         name: nuget-package
-        path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ steps.vars.outputs.ref }}.nupkg
+        path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
 
-    - name: Create Release
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: V${{ github.ref }}
-        draft: true
-        prerelease: false
+  release:
+    runs: ubuntu-latest
+    needs: [ variables, build ]
+    if: needs.build.result == 'success' && needs.variables.istag == 'true'
 
-    - name: Upload Release Asset
-      if: success() && steps.vars.outputs.is_tag == 'true' && matrix.os == 'ubuntu-latest' && matrix.dotnet == '5.0.101'
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ steps.vars.outputs.ref }}.nupkg
-        asset_name: Micky5991.EventAggregator.${{ steps.vars.outputs.ref }}.nupkg
-        asset_content_type: application/zip
+    steps:
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: nuget-package
+          path: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+
+      - name: Create Release
+          id: create_release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: ${{ github.ref }}
+            release_name: V${{ github.ref }}
+            draft: true
+            prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+          asset_name: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+          asset_content_type: application/zip
+
