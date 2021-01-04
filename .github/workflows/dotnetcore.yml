@@ -61,34 +61,34 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      if: needs.variables.istag == 'false'
+      if: needs.variables.outputs.istag == 'false'
       run: dotnet build --configuration Release --no-restore
 
-    - name: Build with version ${{ needs.variables.ref }}
-      if: needs.variables.istag == 'true'
-      run: dotnet build --configuration Release --no-restore -p:Version=${{ needs.variables.ref }} -p:PackageVersion=${{ needs.variables.ref }}
+    - name: Build with version ${{ needs.variables.outputs.ref }}
+      if: needs.variables.outputs.istag == 'true'
+      run: dotnet build --configuration Release --no-restore -p:Version=${{ needs.variables.outputs.ref }} -p:PackageVersion=${{ needs.variables.outputs.ref }}
 
     - name: Test
       run: dotnet test -v normal
 
     - name: Save NuGet artifact
-      if: success() && needs.variables.istag == 'true' && matrix.os == 'ubuntu-latest'
+      if: success() && needs.variables.outputs.istag == 'true' && matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v2-preview
       with:
         name: nuget-package
-        path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+        path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
 
   release:
     runs-on: ubuntu-latest
     needs: [ variables, build ]
-    if: needs.build.result == 'success' && needs.variables.istag == 'true'
+    if: needs.build.result == 'success' && needs.variables.outputs.istag == 'true'
 
     steps:
 
       - uses: actions/download-artifact@v2
         with:
           name: nuget-package
-          path: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+          path: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
 
       - name: Create Release
         id: create_release
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
-          asset_name: Micky5991.EventAggregator.${{ needs.variables.ref }}.nupkg
+          asset_path: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
+          asset_name: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
           asset_content_type: application/zip
 
