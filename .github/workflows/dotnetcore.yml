@@ -88,7 +88,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: nuget-package
-          path: ./Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
+          path: artifacts/
 
       - name: Create Release
         id: create_release
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
+          asset_path: artifacts/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
           asset_name: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
           asset_content_type: application/zip
 
