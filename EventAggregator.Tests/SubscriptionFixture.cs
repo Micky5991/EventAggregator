@@ -1,12 +1,10 @@
 using System;
-using System.Threading.Tasks;
-using EventAggregator.Tests.Exceptions;
+using System.Threading;
 using EventAggregator.Tests.TestClasses;
 using FluentAssertions;
 using Micky5991.EventAggregator;
+using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
-using Micky5991.EventAggregator.Services;
-using Micky5991.EventAggregator.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,255 +15,247 @@ namespace EventAggregator.Tests
     [TestClass]
     public class SubscriptionFixture
     {
-        private int _calledAmount;
+        private IEvent passedEvent = null;
 
-        private Mock<EventAggregatorService> _eventAggregator;
+        private int handleCounter = 0;
 
-        private ILogger<IEventAggregator> _logger;
+        private bool subscribeStatus = true;
+
+        private int mainThreadId;
+
+        private NullLogger<ISubscription> logger;
+
+        private Action handleAction;
+
+        private TestSynchronizationContext synchronizationContext;
+
+        private Subscription<TestEvent> publisherThreadSubscription = null;
+
+        private Subscription<TestEvent> mainThreadSubscription = null;
+
+        private Subscription<TestEvent> backgroundThreadSubscription = null;
 
         [TestInitialize]
         public void Setup()
         {
-            _logger = new NullLogger<IEventAggregator>();
-            _eventAggregator = new Mock<EventAggregatorService>(_logger);
+            this.mainThreadId = Thread.CurrentThread.ManagedThreadId;
+            this.synchronizationContext = new TestSynchronizationContext();
+            this.handleAction = () => { };
+            this.logger = new NullLogger<ISubscription>();
+
+            SynchronizationContext.SetSynchronizationContext(this.synchronizationContext);
+
+            this.publisherThreadSubscription = new Subscription<TestEvent>(
+                                                            this.logger,
+                                                            e =>
+                                                            {
+                                                                this.passedEvent = e;
+                                                                this.handleCounter++;
+
+                                                                this.handleAction();
+                                                            },
+                                                            ThreadTarget.PublisherThread,
+                                                            this.synchronizationContext,
+                                                            () => this.subscribeStatus = false);
+
+            this.mainThreadSubscription = new Subscription<TestEvent>(
+                                                                      this.logger,
+                                                                      e =>
+                                                                      {
+                                                                          this.passedEvent = e;
+                                                                          this.handleCounter++;
+
+                                                                          this.handleAction();
+                                                                      },
+                                                                      ThreadTarget.MainThread,
+                                                                      this.synchronizationContext,
+                                                                      () => this.subscribeStatus = false);
+
+            this.backgroundThreadSubscription = new Subscription<TestEvent>(
+                                                                            this.logger,
+                                                                            e =>
+                                                                            {
+                                                                                this.passedEvent = e;
+                                                                                this.handleCounter++;
+
+                                                                                this.handleAction();
+                                                                            },
+                                                                            ThreadTarget.BackgroundThread,
+                                                                            this.synchronizationContext,
+                                                                            () => this.subscribeStatus = false);
         }
 
         [TestCleanup]
-        public void Cleanup()
+        public void Teardown()
         {
-            _calledAmount = 0;
+            this.handleCounter = 0;
+            this.subscribeStatus = true;
+            this.publisherThreadSubscription = null;
+            this.passedEvent = null;
+            this.synchronizationContext = null;
 
-            _eventAggregator = null;
-            _logger = null;
+            SynchronizationContext.SetSynchronizationContext(null);
         }
 
         [TestMethod]
-        public async Task TriggeringAsyncWithNulledFilterWillIgnoreFilter()
+        public void CreationOfSubscriptionShouldWork()
         {
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
+            var called = false;
+            var unsubscribed = false;
 
-            await subscription.TriggerAsync(new TestEvent());
+            new Subscription<TestEvent>(
+                                        this.logger,
+                                        e => called = true,
+                                        ThreadTarget.PublisherThread,
+                                        this.synchronizationContext,
+                                        () => unsubscribed = true);
 
-            Assert.AreEqual(1, _calledAmount);
+            called.Should().BeFalse();
+            unsubscribed.Should().BeFalse();
         }
 
         [TestMethod]
-        public async Task TriggeringSyncWithNulledFilterWillIgnoreFilter()
+        public void CreationOfSubscriptionWithNullHandlerThrowsException()
         {
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, null);
+            Action act = () => new Subscription<TestEvent>(
+                                                           this.logger,
+                                                           null,
+                                                           ThreadTarget.PublisherThread,
+                                                           this.synchronizationContext,
+                                                           () => { });
 
-            await subscription.TriggerAsync(new TestEvent());
-            subscription.TriggerSync(new TestEvent());
-
-            Assert.AreEqual(2, _calledAmount);
+            act.Should().Throw<ArgumentNullException>().WithMessage("*handler*");
         }
 
-        [DataTestMethod]
+        [TestMethod]
+        public void CreationOfSubscriptionWithNullUnsubscriberThrowsException()
+        {
+            Action act = () => new Subscription<TestEvent>(
+                                                           this.logger,
+                                                           e => { },
+                                                           ThreadTarget.PublisherThread,
+                                                           this.synchronizationContext,
+                                                           null);
+
+            act.Should().Throw<ArgumentNullException>().WithMessage("*unsubscribeAction*");
+        }
+
+        [TestMethod]
+        public void CreationOfSubscriptionWithNullLoggerThrowsThrowsException()
+        {
+            Action act = () => new Subscription<TestEvent>(
+                                                           null,
+                                                           e => { },
+                                                           ThreadTarget.PublisherThread,
+                                                           this.synchronizationContext,
+                                                           () => { });
+
+            act.Should().Throw<ArgumentNullException>().WithMessage("*logger*");
+        }
+
+        [TestMethod]
+        public void InvokingEventWithNullThrowsArgumentNullException()
+        {
+            Action act = () => this.publisherThreadSubscription.Invoke(null);
+
+            act.Should().Throw<ArgumentNullException>("*eventInstance*");
+        }
+
+        [TestMethod]
+        public void DisposingSubscriptionCallsUnsubscription()
+        {
+            this.publisherThreadSubscription.Dispose();
+
+            this.subscribeStatus.Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void DisposingSubscriptionThrowsExceptionsOnMethods()
+        {
+            this.publisherThreadSubscription.Dispose();
+
+            Action actDispose = () => this.publisherThreadSubscription.Dispose();
+            actDispose.Should().Throw<ObjectDisposedException>();
+
+            Action actInvoke = () => this.publisherThreadSubscription.Invoke(new TestEvent());
+            actInvoke.Should().Throw<ObjectDisposedException>();
+        }
+
+        [TestMethod]
+        public void CreatingSubscriptionWithInvalidThreadTargetThrowsException()
+        {
+            Action act = () => new Subscription<TestEvent>(
+                                                           this.logger,
+                                                           e => { },
+                                                           (ThreadTarget) int.MaxValue,
+                                                           this.synchronizationContext,
+                                                           () => { });
+
+            act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*threadTarget*");
+        }
+
+        [TestMethod]
+        public void InvokingSubscriptionCallsHandlerWithCorreltArguments()
+        {
+            var eventData = new TestEvent();
+
+            this.publisherThreadSubscription.Invoke(eventData);
+
+            this.passedEvent.Should().Be(eventData);
+        }
+
+        [TestMethod]
         [DataRow(1)]
         [DataRow(2)]
-        [DataRow(3)]
-        public async Task TriggeringCertainAmountsOfEventsAsyncWillExecuteSameAmount(int amount)
+        [DataRow(10)]
+        [DataRow(100)]
+        public void InvokingSubscriptionMultipleTimesCallsTheseAmount(int amount)
         {
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
-
             for (var i = 0; i < amount; i++)
             {
-                await subscription.TriggerAsync(new TestEvent());
+                this.publisherThreadSubscription.Invoke(new TestEvent());
             }
 
-            Assert.AreEqual(amount, _calledAmount);
-        }
-
-        [DataTestMethod]
-        [DataRow(1)]
-        [DataRow(2)]
-        [DataRow(3)]
-        public async Task TriggeringCertainAmountsOfEventsSyncWillExecuteSameAmount(int amount)
-        {
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, null);
-
-            for (var i = 0; i < amount; i++)
-            {
-                await subscription.TriggerAsync(new TestEvent());
-                subscription.TriggerSync(new TestEvent());
-            }
-
-            Assert.AreEqual(amount * 2, _calledAmount);
-        }
-
-        [DataTestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public async Task TriggeringWithFilterAsyncWillRespectGivenFilterResult(bool filterResult)
-        {
-            Task<bool> Filter(TestEvent eventData)
-            {
-                return Task.FromResult(filterResult);
-            }
-
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, Filter);
-
-            await subscription.TriggerAsync(new TestEvent());
-
-            Assert.AreEqual(filterResult ? 1 : 0, _calledAmount);
-        }
-
-        [DataTestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public async Task TriggeringWithFilterSyncWillRespectGivenFilterResult(bool filterResult)
-        {
-            bool Filter(TestEvent eventData)
-            {
-                return filterResult;
-            }
-
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, Filter);
-
-            await subscription.TriggerAsync(new TestEvent());
-            subscription.TriggerSync(new TestEvent());
-
-            Assert.AreEqual(filterResult ? 2 : 0, _calledAmount);
+            this.handleCounter.Should().Be(amount);
         }
 
         [TestMethod]
-        public void DisposingAsyncSubscriptionWillUnregisterFromAggregator()
+        public void InvokingMainThreadSubscriptionCallsSynchronizationContext()
         {
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
+            this.mainThreadSubscription.Invoke(new TestEvent());
 
-            _eventAggregator.Setup(x => x.Unsubscribe(subscription));
-
-            subscription.Dispose();
-
-            _eventAggregator.Verify(x => x.Unsubscribe(subscription), Times.Once);
+            this.synchronizationContext.InvokeAmount.Should().Be(1);
         }
 
         [TestMethod]
-        public void DisposingSyncSubscriptionWillUnregisterFromAggregator()
+        public void InvokingPublisherThreadSubscriptionDoesNotCallSubscriptionContext()
         {
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, null);
+            this.publisherThreadSubscription.Invoke(new TestEvent());
 
-            _eventAggregator.Setup(x => x.Unsubscribe(subscription));
-
-            subscription.Dispose();
-
-            _eventAggregator.Verify(x => x.Unsubscribe(subscription), Times.Once);
+            this.synchronizationContext.InvokeAmount.Should().Be(0);
         }
 
         [TestMethod]
-        public async Task ThrowingExceptionInFilterWillBeCatchedAndLogged()
+        public void InvokingBackgroundThreadSubscriptionDoesNotCallSubscriptionContext()
         {
-            Task<bool> Filter(TestEvent eventData)
-            {
-                throw new TestException();
-            }
+            this.backgroundThreadSubscription.Invoke(new TestEvent());
 
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, Filter);
-
-            Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
-
-            await act.Should().NotThrowAsync();
+            this.synchronizationContext.InvokeAmount.Should().Be(0);
         }
 
         [TestMethod]
-        public async Task ThrowingExceptionInAsyncCallbackWillBeCatchedAndLogged()
+        public void ThrowingExceptionInsideHandlerCatchesException()
         {
-            Task Callback(TestEvent eventData)
-            {
-                return Task.FromException(new TestException());
-            }
+            this.handleAction = () => throw new Exception("Test");
 
-            var subscription = BuildAsyncSubscription<TestEvent>(Callback, null);
+            Action act = () => this.publisherThreadSubscription.Invoke(new TestEvent());
+            act.Should().NotThrow();
 
-            Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
+            Action mainAct = () => this.mainThreadSubscription.Invoke(new TestEvent());
+            mainAct.Should().NotThrow();
 
-            await act.Should().NotThrowAsync();
+            Action backgroundAct = () => this.backgroundThreadSubscription.Invoke(new TestEvent());
+            backgroundAct.Should().NotThrow();
         }
-
-        [TestMethod]
-        public async Task ThrowingExceptionInSyncCallbackWillBeCatchedAndLogged()
-        {
-            void Callback(TestEvent eventData)
-            {
-                throw new TestException();
-            }
-
-            var subscription = BuildSyncSubscription<TestEvent>(Callback, null);
-
-            Func<Task> act = () => subscription.TriggerAsync(new TestEvent());
-
-            await act.Should().NotThrowAsync();
-        }
-
-        [DataTestMethod]
-        [DataRow(EventPriority.Highest)]
-        [DataRow(EventPriority.High)]
-        [DataRow(EventPriority.Normal)]
-        [DataRow(EventPriority.Low)]
-        [DataRow(EventPriority.Lowest)]
-        [DataRow(EventPriority.Monitor)]
-        public void PriorityWillBeCorrectlySetupAsync(EventPriority priority)
-        {
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null, priority);
-
-            subscription.Priority.Should().Be(priority);
-        }
-
-        [DataTestMethod]
-        [DataRow(EventPriority.Highest)]
-        [DataRow(EventPriority.High)]
-        [DataRow(EventPriority.Normal)]
-        [DataRow(EventPriority.Low)]
-        [DataRow(EventPriority.Lowest)]
-        [DataRow(EventPriority.Monitor)]
-        public void PriorityWillBeCorrectlySetupSync(EventPriority priority)
-        {
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, null, priority);
-
-            subscription.Priority.Should().Be(priority);
-        }
-
-        [TestMethod]
-        public void EventTypeWillBeSetToGenericTypeParameterAsync()
-        {
-            var subscription = BuildAsyncSubscription<TestEvent>(IncreaseAmount, null);
-
-            subscription.EventType.Should().Be(typeof(TestEvent));
-        }
-
-        [TestMethod]
-        public void EventTypeWillBeSetToGenericTypeParameterSync()
-        {
-            var subscription = BuildSyncSubscription<TestEvent>(IncreaseAmountSync, null);
-
-            subscription.EventType.Should().Be(typeof(TestEvent));
-        }
-
-        private AsyncSubscription<T> BuildAsyncSubscription<T>(EventAggregatorDelegates.AsyncEventCallback<T> callback,
-            EventAggregatorDelegates.AsyncEventFilter<T> filter, EventPriority priority = EventPriority.Normal)
-            where T : IEvent
-        {
-            return new AsyncSubscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
-        }
-
-        private SyncSubscription<T> BuildSyncSubscription<T>(EventAggregatorDelegates.EventCallback<T> callback,
-            EventAggregatorDelegates.EventFilter<T> filter, EventPriority priority = EventPriority.Normal)
-            where T : IEvent
-        {
-            return new SyncSubscription<T>(callback, filter, priority, _eventAggregator.Object, _logger);
-        }
-
-        private Task IncreaseAmount(TestEvent eventData)
-        {
-            _calledAmount++;
-
-            return Task.CompletedTask;
-        }
-
-        private void IncreaseAmountSync(TestEvent eventData)
-        {
-            _calledAmount++;
-        }
-
     }
 }

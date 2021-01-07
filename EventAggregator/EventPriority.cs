@@ -1,4 +1,4 @@
-namespace Micky5991.EventAggregator
+namespace Micky5991.EventAggregator.Enums
 {
     public enum EventPriority
     {
