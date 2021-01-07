@@ -4,6 +4,7 @@ using EventAggregator.Tests.TestClasses;
 using FluentAssertions;
 using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Elements;
+using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,6 +55,7 @@ namespace EventAggregator.Tests
 
                                                                 this.handleAction();
                                                             },
+                                                            EventPriority.Normal,
                                                             ThreadTarget.PublisherThread,
                                                             this.synchronizationContext,
                                                             () => this.subscribeStatus = false);
@@ -67,6 +69,7 @@ namespace EventAggregator.Tests
 
                                                                           this.handleAction();
                                                                       },
+                                                                      EventPriority.Normal,
                                                                       ThreadTarget.MainThread,
                                                                       this.synchronizationContext,
                                                                       () => this.subscribeStatus = false);
@@ -80,6 +83,7 @@ namespace EventAggregator.Tests
 
                                                                                 this.handleAction();
                                                                             },
+                                                                            EventPriority.Normal,
                                                                             ThreadTarget.BackgroundThread,
                                                                             this.synchronizationContext,
                                                                             () => this.subscribeStatus = false);
@@ -106,6 +110,7 @@ namespace EventAggregator.Tests
             new Subscription<TestEvent>(
                                         this.logger,
                                         e => called = true,
+                                        EventPriority.Normal,
                                         ThreadTarget.PublisherThread,
                                         this.synchronizationContext,
                                         () => unsubscribed = true);
@@ -115,11 +120,32 @@ namespace EventAggregator.Tests
         }
 
         [TestMethod]
+        [DataRow(EventPriority.Lowest)]
+        [DataRow(EventPriority.Low)]
+        [DataRow(EventPriority.Normal)]
+        [DataRow(EventPriority.High)]
+        [DataRow(EventPriority.Highest)]
+        [DataRow(EventPriority.Monitor)]
+        public void SubscriptionPriorityWillBeSet(EventPriority priority)
+        {
+            var subscription = new Subscription<TestEvent>(
+                                        this.logger,
+                                        e => {},
+                                        priority,
+                                        ThreadTarget.PublisherThread,
+                                        this.synchronizationContext,
+                                        () => {});
+
+            subscription.Priority.Should().Be(priority);
+        }
+
+        [TestMethod]
         public void CreationOfSubscriptionWithNullHandlerThrowsException()
         {
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            null,
+                                                           EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
                                                            () => { });
@@ -133,6 +159,7 @@ namespace EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => { },
+                                                           EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
                                                            null);
@@ -146,6 +173,7 @@ namespace EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            null,
                                                            e => { },
+                                                           EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
                                                            () => { });
@@ -187,6 +215,7 @@ namespace EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => { },
+                                                           EventPriority.Normal,
                                                            (ThreadTarget) int.MaxValue,
                                                            this.synchronizationContext,
                                                            () => { });

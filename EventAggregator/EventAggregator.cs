@@ -20,5 +20,10 @@ namespace Micky5991.EventAggregator
         {
             throw new System.NotImplementedException();
         }
+
+        private void Unsubscribe(ISubscription subscription)
+        {
+
+        }
     }
 }

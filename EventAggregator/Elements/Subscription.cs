@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -28,8 +29,9 @@ namespace Micky5991.EventAggregator.Elements
         /// <summary>
         /// Initializes a new instance of the <see cref="Subscription{T}"/> class.
         /// </summary>
-        /// <param name="logger">Logger that should receive </param>
+        /// <param name="logger">Logger that should receive.</param>
         /// <param name="handler">Callback that should be called upon publish.</param>
+        /// <param name="eventPriority">Priority of this subscription.</param>
         /// <param name="threadTarget">Selected Thread where this subscription should be executed.</param>
         /// <param name="context">Context that will be needed for certain <paramref name="threadTarget"/> selections.</param>
         /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
@@ -37,6 +39,7 @@ namespace Micky5991.EventAggregator.Elements
         public Subscription(
             ILogger<ISubscription> logger,
             IEventAggregator.EventHandlerDelegate<T> handler,
+            EventPriority eventPriority,
             ThreadTarget threadTarget,
             SynchronizationContext context,
             Action unsubscribeAction)
@@ -49,6 +52,14 @@ namespace Micky5991.EventAggregator.Elements
                                                       $"{nameof(threadTarget)} is not defined in {typeof(ThreadTarget)}");
             }
 
+            if (Enum.IsDefined(typeof(EventPriority), (int)eventPriority) == false)
+            {
+                throw new ArgumentOutOfRangeException(
+                                                      nameof(eventPriority),
+                                                      eventPriority,
+                                                      $"{nameof(eventPriority)} is not defined in {typeof(EventPriority)}");
+            }
+
             if (logger == null)
             {
                 throw new ArgumentNullException(nameof(logger));
@@ -59,7 +70,12 @@ namespace Micky5991.EventAggregator.Elements
             this.threadTarget = threadTarget;
             this.context = context;
             this.unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
+
+            this.Priority = eventPriority;
         }
+
+        /// <inheritdoc/>
+        public EventPriority Priority { get; }
 
         /// <summary>
         /// Calls the saved handler in a certain context.
