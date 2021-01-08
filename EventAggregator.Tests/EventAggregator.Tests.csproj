@@ -5,6 +5,10 @@
         <IsPackable>false</IsPackable>
 
         <TargetFrameworks>net5.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+
+        <AssemblyName>Micky5991.EventAggregator.Tests</AssemblyName>
+
+        <RootNamespace>Micky5991.EventAggregator.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

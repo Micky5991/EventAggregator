@@ -1,6 +1,6 @@
 using Micky5991.EventAggregator.Elements;
 
-namespace EventAggregator.Tests.TestClasses
+namespace Micky5991.EventAggregator.Tests.TestClasses
 {
     public class TestEvent : EventBase
     {

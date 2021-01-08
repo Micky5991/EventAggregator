@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace EventAggregator.Tests.TestClasses
+namespace Micky5991.EventAggregator.Tests.TestClasses
 {
     public class TestSynchronizationContext : SynchronizationContext
     {

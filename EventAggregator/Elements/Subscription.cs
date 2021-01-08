@@ -11,16 +11,14 @@ namespace Micky5991.EventAggregator.Elements
     /// Class that represents a single subscription.
     /// </summary>
     /// <typeparam name="T">Event that will be represented by this subscription.</typeparam>
-    public class Subscription<T> : ISubscription
-        where T : IEvent
+    public class Subscription<T> : IInternalSubscription
+        where T : class, IEvent
     {
         private readonly ILogger<ISubscription> logger;
 
         private readonly IEventAggregator.EventHandlerDelegate<T> handler;
 
-        private readonly ThreadTarget threadTarget;
-
-        private readonly SynchronizationContext context;
+        private readonly SynchronizationContext? context;
 
         private readonly Action unsubscribeAction;
 
@@ -33,7 +31,7 @@ namespace Micky5991.EventAggregator.Elements
         /// <param name="handler">Callback that should be called upon publish.</param>
         /// <param name="eventPriority">Priority of this subscription.</param>
         /// <param name="threadTarget">Selected Thread where this subscription should be executed.</param>
-        /// <param name="context">Context that will be needed for certain <paramref name="threadTarget"/> selections.</param>
+        /// <param name="context">Context that will be needed for <paramref name="threadTarget"/> selections.</param>
         /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
         /// <exception cref="ArgumentOutOfRangeException"><param name="threadTarget"></param> is invalid.</exception>
         public Subscription(
@@ -41,7 +39,7 @@ namespace Micky5991.EventAggregator.Elements
             IEventAggregator.EventHandlerDelegate<T> handler,
             EventPriority eventPriority,
             ThreadTarget threadTarget,
-            SynchronizationContext context,
+            SynchronizationContext? context,
             Action unsubscribeAction)
         {
             if (Enum.IsDefined(typeof(ThreadTarget), (int)threadTarget) == false)
@@ -67,23 +65,28 @@ namespace Micky5991.EventAggregator.Elements
 
             this.logger = logger;
             this.handler = handler ?? throw new ArgumentNullException(nameof(handler));
-            this.threadTarget = threadTarget;
             this.context = context;
             this.unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
 
             this.Priority = eventPriority;
+            this.ThreadTarget = threadTarget;
+
+            this.ValidateSubscription();
         }
 
         /// <inheritdoc/>
         public EventPriority Priority { get; }
 
+        /// <inheritdoc/>
+        public ThreadTarget ThreadTarget { get; }
+
         /// <summary>
         /// Calls the saved handler in a certain context.
         /// </summary>
         /// <param name="eventInstance">Event instance that should be passed to a handler that contains certain information.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><see cref="threadTarget"/> is not handled.</exception>
         /// <exception cref="ObjectDisposedException"><see cref="Subscription{T}"/> has already been disposed.</exception>
-        public void Invoke(T eventInstance)
+        /// <exception cref="InvalidOperationException"><see cref="SynchronizationContext"/> is null, but <see cref="ThreadTarget"/> was set to main thread.</exception>
+        public void Invoke(IEvent eventInstance)
         {
             if (this.disposed)
             {
@@ -95,20 +98,32 @@ namespace Micky5991.EventAggregator.Elements
                 throw new ArgumentNullException(nameof(eventInstance));
             }
 
-            switch (this.threadTarget)
+            // Could not use '== false', because scope for instance is not right.
+            if (!(eventInstance is T instance))
+            {
+                throw new ArgumentException("Type of event is invalid.", nameof(eventInstance));
+            }
+
+            switch (this.ThreadTarget)
             {
                 case ThreadTarget.PublisherThread:
-                    this.ExecuteSafely(eventInstance);
+                    this.ExecuteSafely(instance);
 
                     break;
 
                 case ThreadTarget.MainThread:
-                    this.context.Post(o => this.ExecuteSafely(eventInstance), null);
+                    if (this.context == null)
+                    {
+                        throw new
+                            InvalidOperationException($"Could not invoke subscription on {nameof(ThreadTarget.MainThread)} without {nameof(SynchronizationContext)} set.");
+                    }
+
+                    this.context.Post(_ => this.ExecuteSafely(instance), null);
 
                     break;
 
                 case ThreadTarget.BackgroundThread:
-                    Task.Run(() => this.ExecuteSafely(eventInstance));
+                    Task.Run(() => this.ExecuteSafely(instance));
 
                     break;
 
@@ -141,6 +156,15 @@ namespace Micky5991.EventAggregator.Elements
             catch (Exception e)
             {
                 this.logger.LogError(e, "An error occured during {0} subscription", typeof(T));
+            }
+        }
+
+        private void ValidateSubscription()
+        {
+            if (this.ThreadTarget == ThreadTarget.MainThread && this.context == null)
+            {
+                throw new
+                    InvalidOperationException($"The {nameof(SynchronizationContext)} has to be set in order to use {nameof(ThreadTarget.MainThread)}");
             }
         }
     }

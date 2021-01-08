@@ -1,28 +1,23 @@
 using System;
 using System.Threading;
-using EventAggregator.Tests.TestClasses;
 using FluentAssertions;
-using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
-using Microsoft.Extensions.Logging;
+using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
-namespace EventAggregator.Tests
+namespace Micky5991.EventAggregator.Tests
 {
     [TestClass]
     public class SubscriptionFixture
     {
-        private IEvent passedEvent = null;
+        private IEvent passedEvent;
 
-        private int handleCounter = 0;
+        private int handleCounter;
 
         private bool subscribeStatus = true;
-
-        private int mainThreadId;
 
         private NullLogger<ISubscription> logger;
 
@@ -30,16 +25,15 @@ namespace EventAggregator.Tests
 
         private TestSynchronizationContext synchronizationContext;
 
-        private Subscription<TestEvent> publisherThreadSubscription = null;
+        private Subscription<TestEvent> publisherThreadSubscription;
 
-        private Subscription<TestEvent> mainThreadSubscription = null;
+        private Subscription<TestEvent> mainThreadSubscription;
 
-        private Subscription<TestEvent> backgroundThreadSubscription = null;
+        private Subscription<TestEvent> backgroundThreadSubscription;
 
         [TestInitialize]
         public void Setup()
         {
-            this.mainThreadId = Thread.CurrentThread.ManagedThreadId;
             this.synchronizationContext = new TestSynchronizationContext();
             this.handleAction = () => { };
             this.logger = new NullLogger<ISubscription>();
@@ -129,14 +123,31 @@ namespace EventAggregator.Tests
         public void SubscriptionPriorityWillBeSet(EventPriority priority)
         {
             var subscription = new Subscription<TestEvent>(
-                                        this.logger,
-                                        e => {},
-                                        priority,
-                                        ThreadTarget.PublisherThread,
-                                        this.synchronizationContext,
-                                        () => {});
+                                                           this.logger,
+                                                           e => {},
+                                                           priority,
+                                                           ThreadTarget.PublisherThread,
+                                                           this.synchronizationContext,
+                                                           () => {});
 
             subscription.Priority.Should().Be(priority);
+        }
+
+        [TestMethod]
+        [DataRow(ThreadTarget.BackgroundThread)]
+        [DataRow(ThreadTarget.MainThread)]
+        [DataRow(ThreadTarget.PublisherThread)]
+        public void SubscriptionThreadTargetWillBeSet(ThreadTarget threadTarget)
+        {
+            var subscription = new Subscription<TestEvent>(
+                                                           this.logger,
+                                                           e => {},
+                                                           EventPriority.Normal,
+                                                           threadTarget,
+                                                           this.synchronizationContext,
+                                                           () => {});
+
+            subscription.ThreadTarget.Should().Be(threadTarget);
         }
 
         [TestMethod]
@@ -231,6 +242,16 @@ namespace EventAggregator.Tests
             this.publisherThreadSubscription.Invoke(eventData);
 
             this.passedEvent.Should().Be(eventData);
+        }
+
+        [TestMethod]
+        public void InvokingEventWithWrongInstanceThrowsArgumentException()
+        {
+            var eventData = new OtherTestEvent();
+
+            Action act = () => this.publisherThreadSubscription.Invoke(eventData);
+
+            act.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]

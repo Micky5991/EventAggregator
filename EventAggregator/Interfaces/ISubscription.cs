@@ -12,5 +12,10 @@ namespace Micky5991.EventAggregator.Interfaces
         /// Gets priority that this subscription should be called.
         /// </summary>
         EventPriority Priority { get; }
+
+        /// <summary>
+        /// Gets target where this eventhandler should be executed in.
+        /// </summary>
+        ThreadTarget ThreadTarget { get; }
     }
 }
