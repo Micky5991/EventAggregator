@@ -101,7 +101,7 @@ namespace Micky5991.EventAggregator.Tests
             var called = false;
             var unsubscribed = false;
 
-            new Subscription<TestEvent>(
+            var subscription = new Subscription<TestEvent>(
                                         this.logger,
                                         e => called = true,
                                         EventPriority.Normal,
@@ -111,6 +111,8 @@ namespace Micky5991.EventAggregator.Tests
 
             called.Should().BeFalse();
             unsubscribed.Should().BeFalse();
+            subscription.IsDisposed.Should().BeFalse();
+            subscription.Type.Should().Be(typeof(TestEvent));
         }
 
         [TestMethod]
@@ -206,6 +208,7 @@ namespace Micky5991.EventAggregator.Tests
             this.publisherThreadSubscription.Dispose();
 
             this.subscribeStatus.Should().BeFalse();
+            this.publisherThreadSubscription.IsDisposed.Should().BeTrue();
         }
 
         [TestMethod]

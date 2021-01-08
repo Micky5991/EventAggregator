@@ -57,5 +57,13 @@ namespace Micky5991.EventAggregator.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="eventListener"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Main thread synchronization has not been set.</exception>
         public void Subscribe(IEventListener eventListener);
+
+        /// <summary>
+        /// Removes subscription from current aggregator.
+        /// </summary>
+        /// <param name="subscription">Subscription that should be unsubscribed.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="subscription"/> is null.</exception>
+        /// <exception cref="ObjectDisposedException"><paramref name="subscription"/> is already disposed.</exception>
+        public void Unsubscribe(ISubscription subscription);
     }
 }

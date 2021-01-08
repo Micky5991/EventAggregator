@@ -22,8 +22,6 @@ namespace Micky5991.EventAggregator.Elements
 
         private readonly Action unsubscribeAction;
 
-        private bool disposed;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Subscription{T}"/> class.
         /// </summary>
@@ -70,6 +68,7 @@ namespace Micky5991.EventAggregator.Elements
 
             this.Priority = eventPriority;
             this.ThreadTarget = threadTarget;
+            this.Type = typeof(T);
 
             this.ValidateSubscription();
         }
@@ -80,6 +79,12 @@ namespace Micky5991.EventAggregator.Elements
         /// <inheritdoc/>
         public ThreadTarget ThreadTarget { get; }
 
+        /// <inheritdoc/>
+        public bool IsDisposed { get; private set; }
+
+        /// <inheritdoc/>
+        public Type Type { get; }
+
         /// <summary>
         /// Calls the saved handler in a certain context.
         /// </summary>
@@ -88,7 +93,7 @@ namespace Micky5991.EventAggregator.Elements
         /// <exception cref="InvalidOperationException"><see cref="SynchronizationContext"/> is null, but <see cref="ThreadTarget"/> was set to main thread.</exception>
         public void Invoke(IEvent eventInstance)
         {
-            if (this.disposed)
+            if (this.IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(Subscription<T>));
             }
@@ -135,7 +140,7 @@ namespace Micky5991.EventAggregator.Elements
         /// <inheritdoc />
         public void Dispose()
         {
-            if (this.disposed)
+            if (this.IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(Subscription<T>));
             }
@@ -144,7 +149,7 @@ namespace Micky5991.EventAggregator.Elements
 
             GC.SuppressFinalize(this);
 
-            this.disposed = true;
+            this.IsDisposed = true;
         }
 
         private void ExecuteSafely(T eventInstance)

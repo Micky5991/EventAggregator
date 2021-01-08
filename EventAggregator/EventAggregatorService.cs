@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Micky5991.EventAggregator.Elements;
@@ -21,6 +22,8 @@ namespace Micky5991.EventAggregator
 
         private IImmutableDictionary<Type, IImmutableList<IInternalSubscription>> handlers;
 
+        private ReaderWriterLock readerWriterLock;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EventAggregatorService"/> class.
         /// </summary>
@@ -32,6 +35,7 @@ namespace Micky5991.EventAggregator
             this.subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
 
             this.handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
+            this.readerWriterLock = new ReaderWriterLock();
         }
 
         /// <inheritdoc />
@@ -49,12 +53,23 @@ namespace Micky5991.EventAggregator
                 throw new ArgumentNullException(nameof(eventData));
             }
 
-            if (this.handlers.TryGetValue(typeof(T), out var publishHandler) == false)
+            IImmutableList<IInternalSubscription> handlerList;
+
+            this.readerWriterLock.AcquireReaderLock(Timeout.Infinite);
+            try
             {
-                return eventData;
+                if (this.handlers.TryGetValue(typeof(T), out handlerList) ==
+                    false)
+                {
+                    return eventData;
+                }
+            }
+            finally
+            {
+                this.readerWriterLock.ReleaseReaderLock();
             }
 
-            foreach (var handler in publishHandler)
+            foreach (var handler in handlerList)
             {
                 handler.Invoke(eventData);
             }
@@ -71,22 +86,31 @@ namespace Micky5991.EventAggregator
         {
             var subscription = this.BuildSubscription(handler, eventPriority, threadTarget);
 
-            if (this.handlers.TryGetValue(typeof(T), out var newHandlers) == false)
-            {
-                newHandlers = new List<IInternalSubscription>
-                {
-                    subscription,
-                }.ToImmutableList();
-            }
-            else
-            {
-                newHandlers = newHandlers
-                              .Add(subscription)
-                              .OrderBy(x => x.Priority)
-                              .ToImmutableList();
-            }
+            this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
 
-            this.handlers = this.handlers.SetItem(typeof(T), newHandlers);
+            try
+            {
+                if (this.handlers.TryGetValue(typeof(T), out var newHandlers) == false)
+                {
+                    newHandlers = new List<IInternalSubscription>
+                    {
+                        subscription,
+                    }.ToImmutableList();
+                }
+                else
+                {
+                    newHandlers = newHandlers
+                                  .Add(subscription)
+                                  .OrderBy(x => x.Priority)
+                                  .ToImmutableList();
+                }
+
+                this.handlers = this.handlers.SetItem(typeof(T), newHandlers);
+            }
+            finally
+            {
+                this.readerWriterLock.ReleaseWriterLock();
+            }
 
             return subscription;
         }
@@ -97,19 +121,70 @@ namespace Micky5991.EventAggregator
             throw new System.NotImplementedException();
         }
 
+        /// <inheritdoc/>
+        public void Unsubscribe(ISubscription subscription)
+        {
+            if (subscription == null)
+            {
+                throw new ArgumentNullException(nameof(subscription));
+            }
+
+            subscription.Dispose();
+        }
+
+        private void InternalUnsubscribe(IInternalSubscription subscription)
+        {
+            if (subscription.IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(subscription));
+            }
+
+            this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
+
+            try
+            {
+                if (this.handlers.TryGetValue(subscription.Type, out var handlerList) == false)
+                {
+                    return;
+                }
+
+                handlerList = handlerList.Remove(subscription);
+
+                this.handlers = this.handlers.SetItem(subscription.Type, handlerList);
+            }
+            finally
+            {
+                this.readerWriterLock.ReleaseWriterLock();
+            }
+        }
+
+        [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = "We WANT to modify the variable before use.")]
         private IInternalSubscription BuildSubscription<T>(
             IEventAggregator.EventHandlerDelegate<T> handler,
             EventPriority eventPriority,
             ThreadTarget threadTarget)
             where T : class, IEvent
         {
-            return new Subscription<T>(
-                                       this.subscriptionLogger,
-                                       handler,
-                                       eventPriority,
-                                       threadTarget,
-                                       this.synchronizationContext,
-                                       () => { });
+            IInternalSubscription? subscription = null;
+
+            subscription = new Subscription<T>(
+                                               this.subscriptionLogger,
+                                               handler,
+                                               eventPriority,
+                                               threadTarget,
+                                               this.synchronizationContext,
+                                               () =>
+                                               {
+                                                   if (subscription == null)
+                                                   {
+                                                       throw new
+                                                           InvalidOperationException($"Failed to remove subscription from {nameof(IEventAggregator)}");
+                                                   }
+
+                                                   this.InternalUnsubscribe(subscription);
+                                               });
+
+            return subscription;
         }
     }
 }

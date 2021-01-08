@@ -1,3 +1,5 @@
+using System;
+
 namespace Micky5991.EventAggregator.Interfaces
 {
     /// <summary>
@@ -5,6 +7,11 @@ namespace Micky5991.EventAggregator.Interfaces
     /// </summary>
     internal interface IInternalSubscription : ISubscription
     {
+        /// <summary>
+        /// Gets a reference to the wanted type of this handler.
+        /// </summary>
+        Type Type { get; }
+
         /// <summary>
         /// Triggers event handelrs with the given <paramref name="eventInstance"/>.
         /// </summary>

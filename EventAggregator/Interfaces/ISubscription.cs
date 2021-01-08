@@ -17,5 +17,10 @@ namespace Micky5991.EventAggregator.Interfaces
         /// Gets target where this eventhandler should be executed in.
         /// </summary>
         ThreadTarget ThreadTarget { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the current object has been disposed.
+        /// </summary>
+        bool IsDisposed { get; }
     }
 }

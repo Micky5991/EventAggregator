@@ -9,6 +9,7 @@ using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace Micky5991.EventAggregator.Tests
 {
@@ -275,6 +276,42 @@ namespace Micky5991.EventAggregator.Tests
 
             wrongCalled.Should().BeFalse();
             rightCalled.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void UnsubscribingDisposesSubscription()
+        {
+            var subscription = new Mock<ISubscription>();
+            subscription.Setup(x => x.Dispose());
+
+            this.eventAggregator.Unsubscribe(subscription.Object);
+
+            subscription.Verify(x => x.Dispose(), Times.Once);
+        }
+
+        [TestMethod]
+        public void PassingNullToUnsubscribeThrowsException()
+        {
+            Action act = () => this.eventAggregator.Unsubscribe(null);
+
+            act.Should().Throw<ArgumentNullException>();
+        }
+
+        [TestMethod]
+        public void DisposingCreatedSubscriptionUnsubscribesFromAggregator()
+        {
+            var calledAmount = 0;
+
+            var subscription = this.eventAggregator.Subscribe<TestEvent>(_ => calledAmount++, EventPriority.Normal, ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new TestEvent());
+
+            subscription.Dispose();
+
+            this.eventAggregator.Publish(new TestEvent());
+
+            subscription.IsDisposed.Should().BeTrue();
+            calledAmount.Should().Be(1);
         }
     }
 }
