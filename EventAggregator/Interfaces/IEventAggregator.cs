@@ -22,7 +22,7 @@ namespace Micky5991.EventAggregator.Interfaces
         /// </summary>
         /// <param name="synchronizationContext">Target context to execute the handler in.</param>
         /// <exception cref="ArgumentNullException"><paramref name="synchronizationContext"/> is null.</exception>
-        public void SetMainThreadSynchronizationContext(SynchronizationContext synchronizationContext);
+        void SetMainThreadSynchronizationContext(SynchronizationContext synchronizationContext);
 
         /// <summary>
         /// Publish event with this given eventdata.
@@ -31,32 +31,26 @@ namespace Micky5991.EventAggregator.Interfaces
         /// <typeparam name="T">Type of the actual event data.</typeparam>
         /// <returns>Instance of event that was passed in <paramref name="eventData"/>.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="eventData"/> is null.</exception>
-        public T Publish<T>(T eventData)
+        T Publish<T>(T eventData)
             where T : class, IEvent;
 
         /// <summary>
         /// Subscribes to the event of type <typeparamref name="T"/>.
         /// </summary>
         /// <param name="handler">Handler that should be executed on event publish.</param>
+        /// <param name="ignoreCancelled">When the type <typeparamref name="T"/> implements <see cref="ICancellableEvent"/> and a lower priority cancels the event, this handler wont be invoked.</param>
         /// <param name="eventPriority">Defines a priority that orders handler execution from low to high.</param>
         /// <param name="threadTarget">Target thread that this event should be executed in.</param>
         /// <typeparam name="T">Type of event that will be executed.</typeparam>
         /// <exception cref="ArgumentException"><paramref name="threadTarget"/> is not PublisherThread.</exception>
         /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <paramref name="threadTarget"/> was set to main thread.</exception>
         /// <returns>Subscription that has been created for this event handler.</returns>
-        public ISubscription Subscribe<T>(
+        ISubscription Subscribe<T>(
             EventHandlerDelegate<T> handler,
+            bool ignoreCancelled = false,
             EventPriority eventPriority = EventPriority.Normal,
             ThreadTarget threadTarget = ThreadTarget.PublisherThread)
             where T : class, IEvent;
-
-        /// <summary>
-        /// Adds all marked method with <see cref="EventHandlerAttribute"/> to the <see cref="IEventAggregator"/>.
-        /// </summary>
-        /// <param name="eventListener">EventInstance that should be searched and called.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="eventListener"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Main thread synchronization has not been set.</exception>
-        public void Subscribe(IEventListener eventListener);
 
         /// <summary>
         /// Removes subscription from current aggregator.
@@ -64,6 +58,6 @@ namespace Micky5991.EventAggregator.Interfaces
         /// <param name="subscription">Subscription that should be unsubscribed.</param>
         /// <exception cref="ArgumentNullException"><paramref name="subscription"/> is null.</exception>
         /// <exception cref="ObjectDisposedException"><paramref name="subscription"/> is already disposed.</exception>
-        public void Unsubscribe(ISubscription subscription);
+        void Unsubscribe(ISubscription subscription);
     }
 }

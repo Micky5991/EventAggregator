@@ -27,6 +27,7 @@ namespace Micky5991.EventAggregator.Elements
         /// </summary>
         /// <param name="logger">Logger that should receive.</param>
         /// <param name="handler">Callback that should be called upon publish.</param>
+        /// <param name="ignoreCancelled">Ignore event subscription if event was cancelled before.</param>
         /// <param name="eventPriority">Priority of this subscription.</param>
         /// <param name="threadTarget">Selected Thread where this subscription should be executed.</param>
         /// <param name="context">Context that will be needed for <paramref name="threadTarget"/> selections.</param>
@@ -35,6 +36,7 @@ namespace Micky5991.EventAggregator.Elements
         public Subscription(
             ILogger<ISubscription> logger,
             IEventAggregator.EventHandlerDelegate<T> handler,
+            bool ignoreCancelled,
             EventPriority eventPriority,
             ThreadTarget threadTarget,
             SynchronizationContext? context,
@@ -66,12 +68,16 @@ namespace Micky5991.EventAggregator.Elements
             this.context = context;
             this.unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
 
+            this.IgnoreCancelled = ignoreCancelled;
             this.Priority = eventPriority;
             this.ThreadTarget = threadTarget;
             this.Type = typeof(T);
 
             this.ValidateSubscription();
         }
+
+        /// <inheritdoc/>
+        public bool IgnoreCancelled { get; }
 
         /// <inheritdoc/>
         public EventPriority Priority { get; }
@@ -152,6 +158,11 @@ namespace Micky5991.EventAggregator.Elements
             this.IsDisposed = true;
         }
 
+        private bool IsCancellableEvent()
+        {
+            return this.Type.GetInterface(nameof(ICancellableEvent)) != null;
+        }
+
         private void ExecuteSafely(T eventInstance)
         {
             try
@@ -166,6 +177,12 @@ namespace Micky5991.EventAggregator.Elements
 
         private void ValidateSubscription()
         {
+            if (this.IsCancellableEvent() && this.ThreadTarget != ThreadTarget.PublisherThread)
+            {
+                throw new
+                    InvalidOperationException($"This event implements {typeof(ICancellableEvent)} and needs to run in the publishers thread to work.");
+            }
+
             if (this.ThreadTarget == ThreadTarget.MainThread && this.context == null)
             {
                 throw new

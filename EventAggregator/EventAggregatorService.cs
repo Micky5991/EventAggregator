@@ -14,24 +14,21 @@ namespace Micky5991.EventAggregator
     /// <inheritdoc cref="IEventAggregator"/>
     public class EventAggregatorService : IEventAggregator
     {
-        private readonly ILogger<IEventAggregator> logger;
-
         private readonly ILogger<ISubscription> subscriptionLogger;
+
+        private readonly ReaderWriterLock readerWriterLock;
 
         private SynchronizationContext? synchronizationContext;
 
         private IImmutableDictionary<Type, IImmutableList<IInternalSubscription>> handlers;
-
-        private ReaderWriterLock readerWriterLock;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventAggregatorService"/> class.
         /// </summary>
         /// <param name="logger">Logger instance that should be used.</param>
         /// <param name="subscriptionLogger">Logger instance for the subscription that should be used.</param>
-        public EventAggregatorService(ILogger<IEventAggregator> logger, ILogger<ISubscription> subscriptionLogger)
+        public EventAggregatorService(ILogger<ISubscription> subscriptionLogger)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
 
             this.handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
@@ -71,6 +68,11 @@ namespace Micky5991.EventAggregator
 
             foreach (var handler in handlerList)
             {
+                if (handler.IsDisposed || (handler.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
+                {
+                    continue;
+                }
+
                 handler.Invoke(eventData);
             }
 
@@ -80,11 +82,12 @@ namespace Micky5991.EventAggregator
         /// <inheritdoc/>
         public ISubscription Subscribe<T>(
             IEventAggregator.EventHandlerDelegate<T> handler,
+            bool ignoreCancelled,
             EventPriority eventPriority,
             ThreadTarget threadTarget)
             where T : class, IEvent
         {
-            var subscription = this.BuildSubscription(handler, eventPriority, threadTarget);
+            var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
 
             this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
 
@@ -113,12 +116,6 @@ namespace Micky5991.EventAggregator
             }
 
             return subscription;
-        }
-
-        /// <inheritdoc/>
-        public void Subscribe(IEventListener eventListener)
-        {
-            throw new System.NotImplementedException();
         }
 
         /// <inheritdoc/>
@@ -161,6 +158,7 @@ namespace Micky5991.EventAggregator
         [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = "We WANT to modify the variable before use.")]
         private IInternalSubscription BuildSubscription<T>(
             IEventAggregator.EventHandlerDelegate<T> handler,
+            bool ignoreCancelled,
             EventPriority eventPriority,
             ThreadTarget threadTarget)
             where T : class, IEvent
@@ -170,6 +168,7 @@ namespace Micky5991.EventAggregator
             subscription = new Subscription<T>(
                                                this.subscriptionLogger,
                                                handler,
+                                               ignoreCancelled,
                                                eventPriority,
                                                threadTarget,
                                                this.synchronizationContext,

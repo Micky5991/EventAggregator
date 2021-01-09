@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using FluentAssertions;
 using Micky5991.EventAggregator;
@@ -17,7 +18,6 @@ namespace Micky5991.EventAggregator.Tests
     public class EventAggregatorFixture
     {
 
-        private ILogger<IEventAggregator> logger;
         private ILogger<ISubscription> subscriptionLogger;
 
         private TestSynchronizationContext synchronizationContext;
@@ -27,18 +27,16 @@ namespace Micky5991.EventAggregator.Tests
         [TestInitialize]
         public void Setup()
         {
-            this.logger = new NullLogger<IEventAggregator>();
             this.subscriptionLogger = new NullLogger<ISubscription>();
             this.synchronizationContext = new TestSynchronizationContext();
 
-            this.eventAggregator = new EventAggregatorService(this.logger, this.subscriptionLogger);
+            this.eventAggregator = new EventAggregatorService(this.subscriptionLogger);
             this.eventAggregator.SetMainThreadSynchronizationContext(this.synchronizationContext);
         }
 
         [TestCleanup]
         public void Teardown()
         {
-            this.logger = null;
             this.subscriptionLogger = null;
             this.synchronizationContext = null;
 
@@ -48,21 +46,13 @@ namespace Micky5991.EventAggregator.Tests
         [TestMethod]
         public void BuildEventAggregatorWorks()
         {
-            var aggregator = new EventAggregatorService(this.logger, this.subscriptionLogger);
-        }
-
-        [TestMethod]
-        public void BuildEventAggregatorWithLoggerNullThrowsException()
-        {
-            Action act = () => new EventAggregatorService(null, this.subscriptionLogger);
-
-            act.Should().Throw<ArgumentNullException>();
+            var aggregator = new EventAggregatorService(this.subscriptionLogger);
         }
 
         [TestMethod]
         public void BuildEventAggregatorWithSubscriptionLoggerNullThrowsException()
         {
-            Action act = () => new EventAggregatorService(this.logger, null);
+            Action act = () => new EventAggregatorService(null);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -70,10 +60,11 @@ namespace Micky5991.EventAggregator.Tests
         [TestMethod]
         public void SubscribeEventAggregatorWithoutSynchronizationContextThrowsException()
         {
-            var aggregator = new EventAggregatorService(this.logger, this.subscriptionLogger);
+            var aggregator = new EventAggregatorService(this.subscriptionLogger);
 
             Action act = () => aggregator.Subscribe<TestEvent>(
                                                                x => {},
+                                                               false,
                                                                EventPriority.Normal,
                                                                ThreadTarget.MainThread);
 
@@ -86,8 +77,8 @@ namespace Micky5991.EventAggregator.Tests
         [DataRow(ThreadTarget.PublisherThread)]
         public void SubscribeEventWithTargetThatDoesntUseMainThreadContextWorks(ThreadTarget threadTarget)
         {
-            var subscription = new EventAggregatorService(this.logger, this.subscriptionLogger)
-                                   .Subscribe<TestEvent>(e => {}, EventPriority.Normal, threadTarget);
+            var subscription = new EventAggregatorService(this.subscriptionLogger)
+                                   .Subscribe<TestEvent>(e => {}, false, EventPriority.Normal, threadTarget);
 
             subscription.Should().NotBeNull();
         }
@@ -95,8 +86,8 @@ namespace Micky5991.EventAggregator.Tests
         [TestMethod]
         public void SubscribeEventWithTargetThatUsesMainThreadContextThrowsException()
         {
-            Action act = () => new EventAggregatorService(this.logger, this.subscriptionLogger)
-                                   .Subscribe<TestEvent>(e => {}, EventPriority.Normal, ThreadTarget.MainThread);
+            Action act = () => new EventAggregatorService(this.subscriptionLogger)
+                                   .Subscribe<TestEvent>(e => {}, false, EventPriority.Normal, ThreadTarget.MainThread);
 
             act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(SynchronizationContext)}*");
         }
@@ -105,7 +96,7 @@ namespace Micky5991.EventAggregator.Tests
         public void SubscribeEventWithUnknownEventPriorityThrowsException()
         {
             Action act = () => this.eventAggregator
-                                   .Subscribe<TestEvent>(e => { }, (EventPriority) int.MaxValue, ThreadTarget.PublisherThread);
+                                   .Subscribe<TestEvent>(e => { }, false, (EventPriority) int.MaxValue, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
@@ -114,7 +105,7 @@ namespace Micky5991.EventAggregator.Tests
         public void SubscribeEventWithUnknownThreadTargetThrowsException()
         {
             Action act = () => this.eventAggregator
-                                   .Subscribe<TestEvent>(e => { }, EventPriority.Normal, (ThreadTarget) int.MaxValue);
+                                   .Subscribe<TestEvent>(e => { }, false, EventPriority.Normal, (ThreadTarget) int.MaxValue);
 
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
@@ -123,7 +114,7 @@ namespace Micky5991.EventAggregator.Tests
         public void SubscribeWithNullAsHandlerThrowsException()
         {
             Action act = () => this.eventAggregator
-                                   .Subscribe<TestEvent>(null, EventPriority.Normal, ThreadTarget.PublisherThread);
+                                   .Subscribe<TestEvent>(null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -138,7 +129,7 @@ namespace Micky5991.EventAggregator.Tests
         public void EventPriorityWillBeSetInSubscription(EventPriority eventPriority)
         {
             var subscription = this.eventAggregator
-                                   .Subscribe<TestEvent>(e => { }, eventPriority, ThreadTarget.MainThread);
+                                   .Subscribe<TestEvent>(e => { }, false, eventPriority, ThreadTarget.MainThread);
 
             subscription.Should().NotBeNull();
             subscription.Priority.Should().Be(eventPriority);
@@ -151,7 +142,7 @@ namespace Micky5991.EventAggregator.Tests
         public void ThreadTargetWillBeSetInSubscription(ThreadTarget threadTarget)
         {
             var subscription = this.eventAggregator
-                                   .Subscribe<TestEvent>(e => { }, EventPriority.Normal, threadTarget);
+                                   .Subscribe<TestEvent>(e => { }, false, EventPriority.Normal, threadTarget);
 
             subscription.Should().NotBeNull();
             subscription.ThreadTarget.Should().Be(threadTarget);
@@ -171,7 +162,7 @@ namespace Micky5991.EventAggregator.Tests
             TestEvent receivedEvent = null;
             var sentEvent = new TestEvent();
 
-            this.eventAggregator.Subscribe<TestEvent>(e => receivedEvent = e, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this.eventAggregator.Subscribe<TestEvent>(e => receivedEvent = e, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(sentEvent);
 
@@ -184,13 +175,13 @@ namespace Micky5991.EventAggregator.Tests
             var calls = new List<int>();
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(1), EventPriority.Normal, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(2), EventPriority.Normal, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(3), EventPriority.Normal, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(new TestEvent());
 
@@ -205,22 +196,22 @@ namespace Micky5991.EventAggregator.Tests
             var calls = new List<int>();
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(1), EventPriority.Lowest, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Lowest, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(2), EventPriority.Low, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Low, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(3), EventPriority.Normal, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(4), EventPriority.High, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(4), false, EventPriority.High, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(5), EventPriority.Highest, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(5), false, EventPriority.Highest, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(6), EventPriority.Monitor, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(6), false, EventPriority.Monitor, ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(new TestEvent());
 
@@ -235,16 +226,16 @@ namespace Micky5991.EventAggregator.Tests
             var calls = new List<int>();
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(1), EventPriority.Lowest, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Lowest, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(2), EventPriority.Low, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Low, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => throw new Exception("OMEGALUL"), EventPriority.Normal, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => throw new Exception("OMEGALUL"), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator
-                .Subscribe<TestEvent>(e => calls.Add(3), EventPriority.High, ThreadTarget.PublisherThread);
+                .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.High, ThreadTarget.PublisherThread);
 
             Action act = () => this.eventAggregator.Publish(new TestEvent());
 
@@ -269,8 +260,8 @@ namespace Micky5991.EventAggregator.Tests
             var wrongCalled = false;
             var rightCalled = false;
 
-            this.eventAggregator.Subscribe<TestEvent>(_ => wrongCalled = true, EventPriority.Normal, ThreadTarget.PublisherThread);
-            this.eventAggregator.Subscribe<OtherTestEvent>(_ => rightCalled = true, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this.eventAggregator.Subscribe<TestEvent>(_ => wrongCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this.eventAggregator.Subscribe<OtherTestEvent>(_ => rightCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(new OtherTestEvent());
 
@@ -302,7 +293,11 @@ namespace Micky5991.EventAggregator.Tests
         {
             var calledAmount = 0;
 
-            var subscription = this.eventAggregator.Subscribe<TestEvent>(_ => calledAmount++, EventPriority.Normal, ThreadTarget.PublisherThread);
+            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+                                                                         _ => calledAmount++,
+                                                                         false,
+                                                                         EventPriority.Normal,
+                                                                         ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(new TestEvent());
 
@@ -312,6 +307,166 @@ namespace Micky5991.EventAggregator.Tests
 
             subscription.IsDisposed.Should().BeTrue();
             calledAmount.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void PublishingEventWithNoIgnoreCancelledWillBeExecuted()
+        {
+            var calledAmount = 0;
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             _ => calledAmount++,
+                                                             false,
+                                                             EventPriority.Normal,
+                                                             ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new CancellableEvent());
+
+            calledAmount.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void PublishingCancellableEventAndIgnoreWithoutActualCancellingWillStillExecute()
+        {
+            var calledAmount = 0;
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             _ => calledAmount++,
+                                                             true,
+                                                             EventPriority.Normal,
+                                                             ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new CancellableEvent());
+
+            calledAmount.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void PublishingCancelledCancellableEventWillIgnoreHandlersThatMarkedSo()
+        {
+            var wrongCalledAmount = 0;
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             e => e.Cancelled = true,
+                                                             false,
+                                                             EventPriority.Low,
+                                                             ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             e => wrongCalledAmount++,
+                                                             true,
+                                                             EventPriority.Normal,
+                                                             ThreadTarget.PublisherThread);
+
+            var cancelledEvent = this.eventAggregator.Publish(new CancellableEvent());
+
+            cancelledEvent.Cancelled.Should().Be(true);
+
+            wrongCalledAmount.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void HigherEventPriorityCancellableEventWillHaveNoEffectOnLowerPriority()
+        {
+            var correctCalledAmount = 0;
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             e => e.Cancelled = true,
+                                                             false,
+                                                             EventPriority.High,
+                                                             ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Subscribe<CancellableEvent>(
+                                                             e => correctCalledAmount++,
+                                                             true,
+                                                             EventPriority.Normal,
+                                                             ThreadTarget.PublisherThread);
+
+            var cancelledEvent = this.eventAggregator.Publish(new CancellableEvent());
+
+            cancelledEvent.Cancelled.Should().Be(true);
+
+            correctCalledAmount.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void RemovingSubscriptionDuringEventHandlerWillSkipEvent()
+        {
+            var wrongCalledAmount = 0;
+
+            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+                                                                         e => wrongCalledAmount++,
+                                                                         false,
+                                                                         EventPriority.High,
+                                                                         ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Subscribe<TestEvent>(
+                                                      e => subscription.Dispose(),
+                                                      false,
+                                                      EventPriority.Normal,
+                                                      ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new TestEvent());
+
+            wrongCalledAmount.Should().Be(0);
+        }
+
+        [TestMethod]
+        [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
+        public void DisposingEventInsideSameHandlerRemovesForFurtherPublishes()
+        {
+            var wasDisposed = false;
+            var calledAmount = 0;
+            ISubscription subscription = null;
+
+            subscription = this.eventAggregator.Subscribe<TestEvent>(
+                                                                     e =>
+                                                                     {
+                                                                         calledAmount++;
+
+                                                                         if (subscription != null)
+                                                                         {
+                                                                             wasDisposed = true;
+                                                                             subscription.Dispose();
+                                                                         }
+                                                                     },
+                                                                     false,
+                                                                     EventPriority.Normal,
+                                                                     ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new TestEvent());
+            this.eventAggregator.Publish(new TestEvent());
+
+            calledAmount.Should().Be(1);
+            wasDisposed.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void SubscribingToEventInsideHandlerWillPublishForNextEvent()
+        {
+            var calledAmount = 0;
+            var innerCalledAmount = 0;
+
+            this.eventAggregator.Subscribe<TestEvent>(
+                                                      e =>
+                                                      {
+                                                          calledAmount++;
+
+                                                          this.eventAggregator.Subscribe<TestEvent>(
+                                                           i =>innerCalledAmount++,
+                                                           false,
+                                                           EventPriority.Normal,
+                                                           ThreadTarget.PublisherThread);
+                                                      },
+                                                      false,
+                                                      EventPriority.Normal,
+                                                      ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new TestEvent());
+            this.eventAggregator.Publish(new TestEvent());
+
+            calledAmount.Should().Be(2);
+            innerCalledAmount.Should().Be(1);
         }
     }
 }

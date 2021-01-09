@@ -49,6 +49,7 @@ namespace Micky5991.EventAggregator.Tests
 
                                                                 this.handleAction();
                                                             },
+                                                            false,
                                                             EventPriority.Normal,
                                                             ThreadTarget.PublisherThread,
                                                             this.synchronizationContext,
@@ -63,6 +64,7 @@ namespace Micky5991.EventAggregator.Tests
 
                                                                           this.handleAction();
                                                                       },
+                                                                      false,
                                                                       EventPriority.Normal,
                                                                       ThreadTarget.MainThread,
                                                                       this.synchronizationContext,
@@ -77,6 +79,7 @@ namespace Micky5991.EventAggregator.Tests
 
                                                                                 this.handleAction();
                                                                             },
+                                                                            false,
                                                                             EventPriority.Normal,
                                                                             ThreadTarget.BackgroundThread,
                                                                             this.synchronizationContext,
@@ -104,6 +107,7 @@ namespace Micky5991.EventAggregator.Tests
             var subscription = new Subscription<TestEvent>(
                                         this.logger,
                                         e => called = true,
+                                        false,
                                         EventPriority.Normal,
                                         ThreadTarget.PublisherThread,
                                         this.synchronizationContext,
@@ -113,6 +117,7 @@ namespace Micky5991.EventAggregator.Tests
             unsubscribed.Should().BeFalse();
             subscription.IsDisposed.Should().BeFalse();
             subscription.Type.Should().Be(typeof(TestEvent));
+            subscription.IgnoreCancelled.Should().BeFalse();
         }
 
         [TestMethod]
@@ -127,6 +132,7 @@ namespace Micky5991.EventAggregator.Tests
             var subscription = new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => {},
+                                                           false,
                                                            priority,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
@@ -144,6 +150,7 @@ namespace Micky5991.EventAggregator.Tests
             var subscription = new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => {},
+                                                           false,
                                                            EventPriority.Normal,
                                                            threadTarget,
                                                            this.synchronizationContext,
@@ -153,11 +160,29 @@ namespace Micky5991.EventAggregator.Tests
         }
 
         [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void SubscriptionIgnoreCancelledWillBeSet(bool ignoreCancelled)
+        {
+            var subscription = new Subscription<TestEvent>(
+                                                           this.logger,
+                                                           e => {},
+                                                           ignoreCancelled,
+                                                           EventPriority.Normal,
+                                                           ThreadTarget.PublisherThread,
+                                                           this.synchronizationContext,
+                                                           () => {});
+
+            subscription.IgnoreCancelled.Should().Be(ignoreCancelled);
+        }
+
+        [TestMethod]
         public void CreationOfSubscriptionWithNullHandlerThrowsException()
         {
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            null,
+                                                           false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
@@ -172,6 +197,7 @@ namespace Micky5991.EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => { },
+                                                           false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
@@ -186,6 +212,7 @@ namespace Micky5991.EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            null,
                                                            e => { },
+                                                           false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
                                                            this.synchronizationContext,
@@ -229,6 +256,7 @@ namespace Micky5991.EventAggregator.Tests
             Action act = () => new Subscription<TestEvent>(
                                                            this.logger,
                                                            e => { },
+                                                           false,
                                                            EventPriority.Normal,
                                                            (ThreadTarget) int.MaxValue,
                                                            this.synchronizationContext,
@@ -309,6 +337,38 @@ namespace Micky5991.EventAggregator.Tests
 
             Action backgroundAct = () => this.backgroundThreadSubscription.Invoke(new TestEvent());
             backgroundAct.Should().NotThrow();
+        }
+
+        [TestMethod]
+        public void SubscribeOnCancellableEventWorksForPublisherThread()
+        {
+            Action act = () => new Subscription<CancellableEvent>(
+                                                                  this.logger,
+                                                                  _ => { },
+                                                                  false,
+                                                                  EventPriority.Normal,
+                                                                  ThreadTarget.PublisherThread,
+                                                                  this.synchronizationContext,
+                                                                  () => {});
+
+            act.Should().NotThrow();
+        }
+
+        [TestMethod]
+        [DataRow(ThreadTarget.BackgroundThread)]
+        [DataRow(ThreadTarget.MainThread)]
+        public void SubscribeOnCancellableEventDoesNotWorkForNonPublisherThreads(ThreadTarget threadTarget)
+        {
+            Action act = () => new Subscription<CancellableEvent>(
+                                                                  this.logger,
+                                                                  _ => { },
+                                                                  false,
+                                                                  EventPriority.Normal,
+                                                                  threadTarget,
+                                                                  this.synchronizationContext,
+                                                                  () => {});
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*Publisher*");
         }
     }
 }

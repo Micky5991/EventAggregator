@@ -9,6 +9,11 @@ namespace Micky5991.EventAggregator.Interfaces
     public interface ISubscription : IDisposable
     {
         /// <summary>
+        /// Gets a value indicating whether the event should not be executed when the event was cancelled before.
+        /// </summary>
+        bool IgnoreCancelled { get; }
+
+        /// <summary>
         /// Gets priority that this subscription should be called.
         /// </summary>
         EventPriority Priority { get; }
