@@ -482,5 +482,19 @@ namespace Micky5991.EventAggregator.Tests
 
             act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
         }
+
+        [TestMethod]
+        public void PublishEventWithDifferentCompileTimeTypeDispatchesRightSubscription()
+        {
+            IEvent eventData = new TestEvent();
+            var calledAmount = 0;
+
+            this.eventAggregator.Subscribe<TestEvent>(e => calledAmount++, false, EventPriority.Normal,
+                                                      ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(eventData);
+
+            calledAmount.Should().Be(1);
+        }
     }
 }

@@ -53,7 +53,7 @@ namespace Micky5991.EventAggregator.Services
             this.readerWriterLock.AcquireReaderLock(Timeout.Infinite);
             try
             {
-                if (this.handlers.TryGetValue(typeof(T), out handlerList) ==
+                if (this.handlers.TryGetValue(eventData.GetType(), out handlerList) ==
                     false)
                 {
                     return eventData;
