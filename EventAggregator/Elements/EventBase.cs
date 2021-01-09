@@ -1,3 +1,4 @@
+using System.Linq;
 using Micky5991.EventAggregator.Interfaces;
 
 namespace Micky5991.EventAggregator.Elements
@@ -10,7 +11,8 @@ namespace Micky5991.EventAggregator.Elements
         /// <inheritdoc/>
         public bool IsCancellable()
         {
-            return this.GetType().GetInterface(nameof(ICancellableEvent)) != null;
+            return this.GetType()
+                       .GetInterfaces().Contains(typeof(ICancellableEvent));
         }
     }
 }
