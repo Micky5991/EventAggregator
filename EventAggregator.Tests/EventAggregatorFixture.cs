@@ -468,5 +468,19 @@ namespace Micky5991.EventAggregator.Tests
             calledAmount.Should().Be(2);
             innerCalledAmount.Should().Be(1);
         }
+
+        [TestMethod]
+        [DataRow(ThreadTarget.BackgroundThread)]
+        [DataRow(ThreadTarget.MainThread)]
+        public void SubscribingToDataChangingEventInWrongThreadTargetThrowsException(ThreadTarget threadTarget)
+        {
+            Action act = () => this.eventAggregator.Subscribe<DataChangingEvent>(
+             _ => { },
+             false,
+             EventPriority.Normal,
+             threadTarget);
+
+            act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
+        }
     }
 }

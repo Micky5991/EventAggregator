@@ -6,6 +6,7 @@ using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ICancellableEvent = Micky5991.EventAggregator.Interfaces.ICancellableEvent;
 
 namespace Micky5991.EventAggregator.Tests
 {
@@ -339,35 +340,55 @@ namespace Micky5991.EventAggregator.Tests
         }
 
         [TestMethod]
-        public void SubscribeOnCancellableEventWorksForPublisherThread()
+        public void InvokingDataChangingEventWillKeepInstanceSame()
         {
-            Action act = () => new Subscription<CancellableEvent>(
-                                                                  this.logger,
-                                                                  _ => { },
-                                                                  false,
-                                                                  EventPriority.Normal,
-                                                                  ThreadTarget.PublisherThread,
-                                                                  this.synchronizationContext,
-                                                                  () => {});
+            var eventData = new DataChangingEvent
+            {
+                Number = 5,
+            };
 
-            act.Should().NotThrow();
+            var subscription = new Subscription<DataChangingEvent>(
+                                                                   this.logger,
+                                                                   e => { e.Number = 2; },
+                                                                   false,
+                                                                   EventPriority.Normal,
+                                                                   ThreadTarget.PublisherThread,
+                                                                   this.synchronizationContext,
+                                                                   () => { });
+
+            subscription.Invoke(eventData);
+
+            eventData.Number.Should().Be(2);
+            eventData.NumberChangeAmount.Should().Be(2);
         }
 
         [TestMethod]
         [DataRow(ThreadTarget.BackgroundThread)]
         [DataRow(ThreadTarget.MainThread)]
-        public void SubscribeOnCancellableEventDoesNotWorkForNonPublisherThreads(ThreadTarget threadTarget)
+        public void SubscribingToDataChangingEventInNonPublishThreadThrowsException(ThreadTarget threadTarget)
         {
-            Action act = () => new Subscription<CancellableEvent>(
-                                                                  this.logger,
-                                                                  _ => { },
-                                                                  false,
-                                                                  EventPriority.Normal,
-                                                                  threadTarget,
-                                                                  this.synchronizationContext,
-                                                                  () => {});
+            Action act = () => new Subscription<DataChangingEvent>(
+                                                                   this.logger,
+                                                                   _ => { },
+                                                                   false,
+                                                                   EventPriority.Normal,
+                                                                   threadTarget,
+                                                                   this.synchronizationContext,
+                                                                   () => { });
 
-            act.Should().Throw<InvalidOperationException>().WithMessage("*Publisher*");
+            act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
+        }
+
+        [TestMethod]
+        public void CancellableEventInterfacesImplementsRightInterfaces()
+        {
+            typeof(ICancellableEvent).Should().Implement<IEvent>().And.Implement<IDataChangingEvent>();
+        }
+
+        [TestMethod]
+        public void DataChangingEventInterfacesImplementsRightInterfaces()
+        {
+            typeof(IDataChangingEvent).Should().Implement<IEvent>();
         }
     }
 }

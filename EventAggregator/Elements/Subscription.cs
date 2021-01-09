@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Micky5991.EventAggregator.Interfaces;
@@ -157,9 +158,9 @@ namespace Micky5991.EventAggregator.Elements
             this.IsDisposed = true;
         }
 
-        private bool IsCancellableEvent()
+        private bool IsDataChaningEvent()
         {
-            return this.Type.GetInterface(nameof(ICancellableEvent)) != null;
+            return this.Type.GetInterfaces().Contains(typeof(IDataChangingEvent));
         }
 
         private void ExecuteSafely(T eventInstance)
@@ -180,10 +181,10 @@ namespace Micky5991.EventAggregator.Elements
 
         private void ValidateSubscription()
         {
-            if (this.IsCancellableEvent() && this.ThreadTarget != ThreadTarget.PublisherThread)
+            if (this.IsDataChaningEvent() && this.ThreadTarget != ThreadTarget.PublisherThread)
             {
                 throw new
-                    InvalidOperationException($"This event implements {typeof(ICancellableEvent)} and needs to run in the publishers thread to work.");
+                    InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
             }
 
             if (this.ThreadTarget == ThreadTarget.MainThread && this.context == null)
