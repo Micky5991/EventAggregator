@@ -27,8 +27,4 @@
       <ProjectReference Include="..\EventAggregator\EventAggregator.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Exceptions" />
-    </ItemGroup>
-
 </Project>
