@@ -170,7 +170,11 @@ namespace Micky5991.EventAggregator.Elements
             }
             catch (Exception e)
             {
-                this.logger.LogError(e, "An error occured during {0} subscription", typeof(T));
+                this.logger.LogError(
+                                     EventAggregatorErrors.ErrorDuringSubscriptionExecution,
+                                     e,
+                                     "An error occured during {0} subscription",
+                                     typeof(T));
             }
         }
 
