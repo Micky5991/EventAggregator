@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using Micky5991.EventAggregator.Enums;
 
 namespace Micky5991.EventAggregator.Interfaces
 {

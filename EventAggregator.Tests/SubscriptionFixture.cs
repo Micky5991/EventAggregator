@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using FluentAssertions;
 using Micky5991.EventAggregator.Elements;
-using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging.Abstractions;

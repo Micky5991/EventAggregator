@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using FluentAssertions;
 using Micky5991.EventAggregator;
-using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging;

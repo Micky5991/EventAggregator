@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +31,7 @@ namespace Micky5991.EventAggregator.Elements
         /// <param name="threadTarget">Selected Thread where this subscription should be executed.</param>
         /// <param name="context">Context that will be needed for <paramref name="threadTarget"/> selections.</param>
         /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><param name="threadTarget"></param> is invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="threadTarget"></paramref> is invalid.</exception>
         public Subscription(
             ILogger<ISubscription> logger,
             IEventAggregator.EventHandlerDelegate<T> handler,

@@ -17,6 +17,7 @@
         <PackageVersion>1.1.0</PackageVersion>
         <Nullable>enable</Nullable>
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +28,11 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="stylecop.json" />
+      <AdditionalFiles Include="stylecop.json" />
     </ItemGroup>
 
 </Project>

@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Micky5991.EventAggregator.Elements;
-using Micky5991.EventAggregator.Enums;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
