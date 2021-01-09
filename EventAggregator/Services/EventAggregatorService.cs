@@ -8,7 +8,7 @@ using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Micky5991.EventAggregator
+namespace Micky5991.EventAggregator.Services
 {
     /// <inheritdoc cref="IEventAggregator"/>
     public class EventAggregatorService : IEventAggregator

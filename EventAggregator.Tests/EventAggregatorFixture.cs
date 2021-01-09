@@ -5,6 +5,7 @@ using System.Threading;
 using FluentAssertions;
 using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Interfaces;
+using Micky5991.EventAggregator.Services;
 using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
