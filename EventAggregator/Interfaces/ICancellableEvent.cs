@@ -1,7 +1,7 @@
 namespace Micky5991.EventAggregator.Interfaces
 {
     /// <summary>
-    /// Creates an event which can be cancelled.
+    /// Creates an event which can be cancelled. These events can only be executed from the publisherthread.
     /// </summary>
     public interface ICancellableEvent : IEvent
     {

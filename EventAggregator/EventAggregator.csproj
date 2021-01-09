@@ -18,6 +18,7 @@
         <Nullable>enable</Nullable>
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <WarningsAsErrors>true</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

@@ -24,7 +24,6 @@ namespace Micky5991.EventAggregator
         /// <summary>
         /// Initializes a new instance of the <see cref="EventAggregatorService"/> class.
         /// </summary>
-        /// <param name="logger">Logger instance that should be used.</param>
         /// <param name="subscriptionLogger">Logger instance for the subscription that should be used.</param>
         public EventAggregatorService(ILogger<ISubscription> subscriptionLogger)
         {
