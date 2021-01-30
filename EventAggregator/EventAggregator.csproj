@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Micky5991.EventAggregator</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator</RootNamespace>
         <LangVersion>9</LangVersion>
@@ -19,6 +18,7 @@
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <WarningsAsErrors>true</WarningsAsErrors>
+        <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
