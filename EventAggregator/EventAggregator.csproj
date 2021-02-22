@@ -12,8 +12,7 @@
         <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
-        <Copyright>2019 Micky5991</Copyright>
-        <PackageVersion>1.1.0</PackageVersion>
+        <Copyright>2021 Micky5991</Copyright>
         <Nullable>enable</Nullable>
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
