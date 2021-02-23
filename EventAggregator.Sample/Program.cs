@@ -1,4 +1,5 @@
-﻿using Micky5991.EventAggregator.Interfaces;
+﻿using System.Threading.Tasks;
+using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Sample.Events;
 using Micky5991.EventAggregator.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,7 @@ namespace Micky5991.EventAggregator.Sample
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var serviceProvider = new ServiceCollection()
                                   .AddLogging(x => x.AddConsole())
@@ -36,10 +37,12 @@ namespace Micky5991.EventAggregator.Sample
 
             // Event priority
             var granted = service.HasPermission("Micky5991", "Moderator");
-            logger.LogInformation("Access for Micky5991 has been {0}", granted ? "granted" : "denied");
+            logger.LogInformation("Access for Micky5991 has been {Result}", granted ? "granted" : "denied");
 
             var guestGranted = service.HasPermission("Guest", "Guest");
-            logger.LogInformation("Access for Guest has been {0}", guestGranted ? "granted" : "denied");
+            logger.LogInformation("Access for Guest has been {Result}", guestGranted ? "granted" : "denied");
+
+            await Task.Delay(10000);
         }
     }
 }

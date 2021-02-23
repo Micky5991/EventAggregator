@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Interfaces;
@@ -114,7 +115,16 @@ namespace Micky5991.EventAggregator.Tests
         public void SubscribeWithNullAsHandlerThrowsException()
         {
             Action act = () => this.eventAggregator
-                                   .Subscribe<TestEvent>(null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+                                   .Subscribe<TestEvent>((IEventAggregator.EventHandlerDelegate<TestEvent>)null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+
+            act.Should().Throw<ArgumentNullException>();
+        }
+
+        [TestMethod]
+        public void SubscribeWithNullAsAsyncHandlerThrowsException()
+        {
+            Action act = () => this.eventAggregator
+                                   .Subscribe<TestEvent>((IEventAggregator.AsyncEventHandlerDelegate<TestEvent>)null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -493,6 +503,48 @@ namespace Micky5991.EventAggregator.Tests
                                                       ThreadTarget.PublisherThread);
 
             this.eventAggregator.Publish(eventData);
+
+            calledAmount.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void SubscribingToAsyncEventWillReturnCorrectly()
+        {
+            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+                                                                         _ => Task.CompletedTask,
+                                                                         false,
+                                                                         EventPriority.Normal,
+                                                                         ThreadTarget.PublisherThread);
+
+            subscription.Priority.Should().Be(EventPriority.Normal);
+            subscription.IgnoreCancelled.Should().BeFalse();
+            subscription.IsDisposed.Should().BeFalse();
+            subscription.ThreadTarget.Should().Be(ThreadTarget.PublisherThread);
+
+            subscription.Should()
+                        .NotBeNull()
+                        .And.BeAssignableTo<ISubscription>();
+        }
+
+        [TestMethod]
+        public async Task AsyncSubscriptionHandlerWillBeTriggered()
+        {
+            var calledAmount = 0;
+
+            this.eventAggregator.Subscribe<TestEvent>(
+                                                                         _ =>
+                                                                         {
+                                                                             calledAmount++;
+
+                                                                             return Task.CompletedTask;
+                                                                         },
+                                                                         false,
+                                                                         EventPriority.Normal,
+                                                                         ThreadTarget.PublisherThread);
+
+            this.eventAggregator.Publish(new TestEvent());
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             calledAmount.Should().Be(1);
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Sample.Events;
 using Microsoft.Extensions.Logging;
@@ -20,11 +21,21 @@ namespace Micky5991.EventAggregator.Sample
         public void Initialize()
         {
             this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnected);
+            this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnectedAsync);
             this.eventAggregator.Subscribe<UserSendMessageEvent>(this.OnGuestSendsMessage);
             this.eventAggregator.Subscribe<UserPurchaseItemEvent>(this.OnUserPurchasedItem);
             this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnPermissionRequest, eventPriority: EventPriority.Lowest);
             this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnModeratorPermissionRequest);
             this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnSpecialUserPermissionRequest, eventPriority: EventPriority.Highest);
+        }
+
+        private async Task OnUserConnectedAsync(UserConnectedEvent eventdata)
+        {
+            await Task.Delay(1000);
+
+            this.logger.LogInformation("{Username} CONNECTED", eventdata.Username);
+
+            throw new Exception("ERROR");
         }
 
         private void OnPermissionRequest(UserPermissionRequestEvent eventdata)
@@ -53,7 +64,7 @@ namespace Micky5991.EventAggregator.Sample
             var messageEvent = this.eventAggregator.Publish(new UserSendMessageEvent(username, message));
             if (messageEvent.Cancelled == false)
             {
-                this.logger.LogInformation("{0}: {1}", messageEvent.Username, messageEvent.Message);
+                this.logger.LogInformation("{Username}: {Message}", messageEvent.Username, messageEvent.Message);
             }
         }
 
@@ -62,7 +73,7 @@ namespace Micky5991.EventAggregator.Sample
             var purchasedEvent = this.eventAggregator.Publish(new UserPurchaseItemEvent(username, price, usedCoupon));
 
             this.logger.LogInformation(
-                                       "{0} purchased item with code {1} for {price} Coins",
+                                       "{Username} purchased item with code {UsedCoupon} for {Price} Coins",
                                        purchasedEvent.Username,
                                        purchasedEvent.UsedCoupon,
                                        purchasedEvent.Price);
@@ -77,7 +88,7 @@ namespace Micky5991.EventAggregator.Sample
 
         private void OnUserConnected(UserConnectedEvent eventData)
         {
-            this.logger.LogInformation("User \"{0}\" connected", eventData.Username);
+            this.logger.LogInformation("User \"{Username}\" connected", eventData.Username);
         }
 
         private void OnUserPurchasedItem(UserPurchaseItemEvent eventData)

@@ -85,6 +85,11 @@ namespace Micky5991.EventAggregator.Services
             ThreadTarget threadTarget)
             where T : class, IEvent
         {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
             var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
 
             this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
@@ -114,6 +119,34 @@ namespace Micky5991.EventAggregator.Services
             }
 
             return subscription;
+        }
+
+        /// <inheritdoc />
+        public ISubscription Subscribe<T>(
+            IEventAggregator.AsyncEventHandlerDelegate<T> handler,
+            bool ignoreCancelled = false,
+            EventPriority eventPriority = EventPriority.Normal,
+            ThreadTarget threadTarget = ThreadTarget.PublisherThread)
+            where T : class, IEvent
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            async void ExecuteSubscription(T eventData)
+            {
+                try
+                {
+                    await handler(eventData);
+                }
+                catch (Exception e)
+                {
+                    this.subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
+                }
+            }
+
+            return this.Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
         }
 
         /// <inheritdoc/>
