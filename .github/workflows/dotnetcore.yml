@@ -42,11 +42,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Setup .NET Core 2.1.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 2.1.x
-
     - name: Setup .NET Core 3.1.x
       uses: actions/setup-dotnet@v1
       with:
@@ -56,6 +51,11 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+
+    - name: Setup .NET 6.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
 
     - name: Install dependencies
       run: dotnet restore
@@ -111,4 +111,3 @@ jobs:
           asset_path: artifacts/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
           asset_name: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
           asset_content_type: application/zip
-
