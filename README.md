@@ -20,10 +20,9 @@ PM> Install-Package Micky5991.EventAggregator
 
 ### Requirements
 
-- .NET Core 2.1 / .NET Core 3.1 / .NET 5
-- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 2.1+
-- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 2.1+
-- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 2.1+
+- .NET Standard 2.0 / .NET Core 3.1 / .NET 5
+- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 3.1+
+- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 3.1+
 - [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 5.0+
 
 ### Registration
