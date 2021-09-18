@@ -1,3 +1,4 @@
+*.DotSettings.user
 
 # Created by https://www.gitignore.io/api/dotnetcore,intellij+all
 # Edit at https://www.gitignore.io/?templates=dotnetcore,intellij+all
