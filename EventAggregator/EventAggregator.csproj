@@ -12,7 +12,7 @@
         <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
-        <Copyright>2021 Micky5991</Copyright>
+        <Copyright>2022 Micky5991</Copyright>
         <Nullable>enable</Nullable>
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -27,7 +27,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+      <PackageReference Include="System.Collections.Immutable" Version="[6.0.0, 6.1.0)" />
     </ItemGroup>
 
     <ItemGroup>
