@@ -10,7 +10,7 @@ This library implements a variation of the eventaggregator pattern.
 
 ## NuGet Package
 
-This library is also available as .NET Standard 2.0 library from [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
+This library is also available as .NET Standard 2.1 library from [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
 
 ```
 PM> Install-Package Micky5991.EventAggregator
@@ -20,10 +20,10 @@ PM> Install-Package Micky5991.EventAggregator
 
 ### Requirements
 
-- .NET Standard 2.0 / .NET Core 3.1 / .NET 5
+- .NET Standard 2.1 / .NET Core 3.1 / .NET 6
 - [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 3.1+
 - [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 3.1+
-- [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 5.0+
+- [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 6.0+
 
 ### Registration
 
@@ -68,7 +68,7 @@ You can find a sample project in [here](EventAggregator/EventAggregator.Sample/)
 ```
 MIT License
 
-Copyright (c) 2021 Micky5991
+Copyright (c) 2022 Micky5991
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
