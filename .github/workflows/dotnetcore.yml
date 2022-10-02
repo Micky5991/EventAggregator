@@ -40,7 +40,7 @@ jobs:
 
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup .NET versions
       uses: actions/setup-dotnet@v2
@@ -65,7 +65,7 @@ jobs:
 
     - name: Save NuGet artifact
       if: success() && needs.variables.outputs.istag == 'true' && matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v2-preview
+      uses: actions/upload-artifact@v3
       with:
         name: nuget-package
         path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
@@ -77,7 +77,7 @@ jobs:
 
     steps:
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: nuget-package
           path: artifacts/
