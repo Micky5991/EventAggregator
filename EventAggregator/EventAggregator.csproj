@@ -3,7 +3,7 @@
     <PropertyGroup>
         <AssemblyName>Micky5991.EventAggregator</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator</RootNamespace>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>EventAggregator</Title>
         <Authors>Micky5991</Authors>
@@ -17,7 +17,7 @@
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <WarningsAsErrors>true</WarningsAsErrors>
-        <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+        <TargetFramework>netstandard2.1</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
