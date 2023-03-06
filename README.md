@@ -20,9 +20,9 @@ PM> Install-Package Micky5991.EventAggregator
 
 ### Requirements
 
-- .NET Standard 2.1 / .NET Core 3.1 / .NET 6
-- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 3.1+
-- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 3.1+
+- .NET Standard 2.1 / .NET 6 / .NET 7 / .NET 8
+- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 6.0+
+- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 6.0+
 - [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 6.0+
 
 ### Registration
@@ -68,7 +68,7 @@ You can find a sample project in [here](EventAggregator/EventAggregator.Sample/)
 ```
 MIT License
 
-Copyright (c) 2022 Micky5991
+Copyright (c) 2022-2023 Micky5991
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
