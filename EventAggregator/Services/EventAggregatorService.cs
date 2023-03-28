@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
+using CommunityToolkit.Diagnostics;
 using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -36,6 +37,8 @@ namespace Micky5991.EventAggregator.Services
         /// <inheritdoc />
         public void SetMainThreadSynchronizationContext(SynchronizationContext context)
         {
+            Guard.IsNotNull(context);
+
             this.synchronizationContext = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -43,10 +46,7 @@ namespace Micky5991.EventAggregator.Services
         public T Publish<T>(T eventData)
             where T : class, IEvent
         {
-            if (eventData == null)
-            {
-                throw new ArgumentNullException(nameof(eventData));
-            }
+            Guard.IsNotNull(eventData);
 
             IImmutableList<IInternalSubscription> handlerList;
 
@@ -85,10 +85,7 @@ namespace Micky5991.EventAggregator.Services
             ThreadTarget threadTarget)
             where T : class, IEvent
         {
-            if (handler == null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
+            Guard.IsNotNull(handler);
 
             var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
 
@@ -129,10 +126,7 @@ namespace Micky5991.EventAggregator.Services
             ThreadTarget threadTarget = ThreadTarget.PublisherThread)
             where T : class, IEvent
         {
-            if (handler == null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
+            Guard.IsNotNull(handler);
 
             async void ExecuteSubscription(T eventData)
             {
@@ -152,10 +146,7 @@ namespace Micky5991.EventAggregator.Services
         /// <inheritdoc/>
         public void Unsubscribe(ISubscription subscription)
         {
-            if (subscription == null)
-            {
-                throw new ArgumentNullException(nameof(subscription));
-            }
+            Guard.IsNotNull(subscription);
 
             subscription.Dispose();
         }
@@ -164,7 +155,7 @@ namespace Micky5991.EventAggregator.Services
         {
             if (subscription.IsDisposed)
             {
-                throw new ObjectDisposedException(nameof(subscription));
+                ThrowHelper.ThrowObjectDisposedException(nameof(subscription));
             }
 
             this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
@@ -194,6 +185,8 @@ namespace Micky5991.EventAggregator.Services
             ThreadTarget threadTarget)
             where T : class, IEvent
         {
+            Guard.IsNotNull(handler);
+
             IInternalSubscription? subscription = null;
 
             subscription = new Subscription<T>(

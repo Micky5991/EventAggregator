@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.Diagnostics;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -101,15 +102,11 @@ namespace Micky5991.EventAggregator.Elements
         {
             if (this.IsDisposed)
             {
-                throw new ObjectDisposedException(nameof(Subscription<T>));
+                ThrowHelper.ThrowObjectDisposedException(nameof(Subscription<T>));
             }
 
-            if (eventInstance == null)
-            {
-                throw new ArgumentNullException(nameof(eventInstance));
-            }
+            Guard.IsNotNull(eventInstance);
 
-            // Could not use '== false', because scope for instance is not right.
             if (eventInstance is not T instance)
             {
                 throw new ArgumentException("Type of event is invalid.", nameof(eventInstance));
@@ -148,7 +145,7 @@ namespace Micky5991.EventAggregator.Elements
         {
             if (this.IsDisposed)
             {
-                throw new ObjectDisposedException(nameof(Subscription<T>));
+                ThrowHelper.ThrowObjectDisposedException(nameof(Subscription<T>));
             }
 
             this.unsubscribeAction();
