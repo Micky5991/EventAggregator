@@ -110,7 +110,7 @@ namespace Micky5991.EventAggregator.Elements
             }
 
             // Could not use '== false', because scope for instance is not right.
-            if (!(eventInstance is T instance))
+            if (eventInstance is not T instance)
             {
                 throw new ArgumentException("Type of event is invalid.", nameof(eventInstance));
             }
