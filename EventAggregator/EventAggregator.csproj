@@ -3,7 +3,7 @@
     <PropertyGroup>
         <AssemblyName>Micky5991.EventAggregator</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator</RootNamespace>
-        <LangVersion>10</LangVersion>
+        <LangVersion>12</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>EventAggregator</Title>
         <Authors>Micky5991</Authors>
@@ -17,7 +17,8 @@
         <CodeAnalysisRuleSet>EventAggregator.ruleset</CodeAnalysisRuleSet>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <WarningsAsErrors>true</WarningsAsErrors>
-        <TargetFrameworks>net6.0;net7.0;net8.0;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -32,8 +33,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="stylecop.json" />
-      <AdditionalFiles Include="stylecop.json" />
+        <None Remove="stylecop.json" />
+        <AdditionalFiles Include="stylecop.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>

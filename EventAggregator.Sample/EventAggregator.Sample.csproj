@@ -5,8 +5,8 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Micky5991.EventAggregator.Sample</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator.Sample</RootNamespace>
-        <LangVersion>10</LangVersion>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
