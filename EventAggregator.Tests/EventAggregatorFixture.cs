@@ -4,14 +4,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Micky5991.EventAggregator;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Services;
 using Micky5991.EventAggregator.Tests.TestClasses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 
 namespace Micky5991.EventAggregator.Tests
 {
@@ -282,12 +281,11 @@ namespace Micky5991.EventAggregator.Tests
         [TestMethod]
         public void UnsubscribingDisposesSubscription()
         {
-            var subscription = new Mock<ISubscription>();
-            subscription.Setup(x => x.Dispose());
+            var subscription = Substitute.For<ISubscription>();
 
-            this.eventAggregator.Unsubscribe(subscription.Object);
+            this.eventAggregator.Unsubscribe(subscription);
 
-            subscription.Verify(x => x.Dispose(), Times.Once);
+            subscription.Received(1).Dispose();
         }
 
         [TestMethod]
