@@ -152,7 +152,7 @@ public class EventAggregatorService : IEventAggregator
             }
             catch (Exception e)
             {
-                _subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
+                _subscriptionLogger.LogError(e, "An error occured during async handler of {EventType}", typeof(T));
             }
         }
 
