@@ -113,6 +113,18 @@ public class EventAggregatorService : IEventAggregator
         return subscription;
     }
 
+    public ISubscription Subscribe<T>(IEventAggregator.EventHandlerDelegate<T> handler, Action<SubscriptionOptions> configureSubscription) where T : class, IEvent
+    {
+        Guard.IsNotNull(handler);
+        Guard.IsNotNull(configureSubscription);
+
+        var options = new SubscriptionOptions();
+
+        configureSubscription(options);
+
+        return Subscribe(handler, options);
+    }
+
     /// <inheritdoc />
     public ISubscription Subscribe<T>(IEventAggregator.AsyncEventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
         where T : class, IEvent
@@ -132,6 +144,18 @@ public class EventAggregatorService : IEventAggregator
         }
 
         return Subscribe<T>(ExecuteSubscription, subscriptionOptions);
+    }
+
+    public ISubscription Subscribe<T>(IEventAggregator.AsyncEventHandlerDelegate<T> handler, Action<SubscriptionOptions> configureSubscription) where T : class, IEvent
+    {
+        Guard.IsNotNull(handler);
+        Guard.IsNotNull(configureSubscription);
+
+        var options = new SubscriptionOptions();
+
+        configureSubscription(options);
+
+        return Subscribe(handler, options);
     }
 
     /// <inheritdoc/>

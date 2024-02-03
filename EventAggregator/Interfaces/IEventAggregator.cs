@@ -51,9 +51,21 @@ public interface IEventAggregator
     /// <param name="subscriptionOptions">Options to configure the behavior of this specific subscription.</param>
     /// <typeparam name="T">Type of event that will be executed.</typeparam>
     /// <exception cref="ArgumentNullException"><paramref name="handler"/> is null</exception>
-    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <paramref name="threadTarget"/> was set to main thread.</exception>
+    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <see cref="SubscriptionOptions.ThreadTarget"/> was set to <see cref="ThreadTarget.MainThread"/>.</exception>
     /// <returns>Subscription that has been created for this event handler.</returns>
     ISubscription Subscribe<T>(EventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
+        where T : class, IEvent;
+
+    /// <summary>
+    /// Subscribes to the event of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="handler">Handler that should be executed on event publish.</param>
+    /// <param name="configureSubscription">Configures the behavior of this specific subscription.</param>
+    /// <typeparam name="T">Type of event that will be executed.</typeparam>
+    /// <exception cref="ArgumentNullException"><paramref name="handler"/> is null</exception>
+    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <see cref="SubscriptionOptions.ThreadTarget"/> was set to <see cref="ThreadTarget.MainThread"/>.</exception>
+    /// <returns>Subscription that has been created for this event handler.</returns>
+    ISubscription Subscribe<T>(EventHandlerDelegate<T> handler, Action<SubscriptionOptions> configureSubscription)
         where T : class, IEvent;
 
     /// <summary>
@@ -64,9 +76,22 @@ public interface IEventAggregator
     /// <param name="subscriptionOptions">Options to configure the behavior of this specific subscription.</param>
     /// <typeparam name="T">Type of event that will be executed.</typeparam>
     /// <exception cref="ArgumentNullException"><paramref name="handler"/> is null</exception>
-    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <paramref name="threadTarget"/> was set to main thread.</exception>
+    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <see cref="SubscriptionOptions.ThreadTarget"/> was set to <see cref="ThreadTarget.MainThread"/>.</exception>
     /// <returns>Subscription that has been created for this event handler.</returns>
     ISubscription Subscribe<T>(AsyncEventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
+        where T : class, IEvent;
+
+    /// <summary>
+    /// Subscribes to the event of type <typeparamref name="T"/>. This will not wait for any result and using
+    /// <see cref="IDataChangingEvent"/> will result in unwanted behavior.
+    /// </summary>
+    /// <param name="handler">Handler that should be executed on event publish.</param>
+    /// <param name="configureSubscription">Configures the behavior of this specific subscription.</param>
+    /// <typeparam name="T">Type of event that will be executed.</typeparam>
+    /// <exception cref="ArgumentNullException"><paramref name="handler"/> is null</exception>
+    /// <exception cref="InvalidOperationException">Main thread synchronization has not been set, but <see cref="SubscriptionOptions.ThreadTarget"/> was set to <see cref="ThreadTarget.MainThread"/>.</exception>
+    /// <returns>Subscription that has been created for this event handler.</returns>
+    ISubscription Subscribe<T>(AsyncEventHandlerDelegate<T> handler, Action<SubscriptionOptions> configureSubscription)
         where T : class, IEvent;
 
     /// <summary>
