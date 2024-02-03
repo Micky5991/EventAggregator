@@ -48,6 +48,10 @@ public class EventAggregatorService : IEventAggregator
     {
         Guard.IsNotNull(eventData);
 
+        using var activity = EventAggregatorDiagnostics.Source.StartActivity($"Publish event {typeof(T).FullName}");
+
+        activity?.SetTag(EventAggregatorDiagnostics.TagEventType, typeof(T).FullName);
+
         IImmutableList<IInternalSubscription>? handlerList;
 
         _readerWriterLock.AcquireReaderLock(Timeout.Infinite);

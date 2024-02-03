@@ -57,6 +57,7 @@ public class Subscription<T> : IInternalSubscription
         _unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
 
         SubscriptionOptions = subscriptionOptions ?? new SubscriptionOptions();
+
         Type = typeof(T);
 
         ValidateSubscription();
@@ -70,6 +71,14 @@ public class Subscription<T> : IInternalSubscription
     /// <exception cref="InvalidOperationException"><see cref="SynchronizationContext"/> is null, but <see cref="ThreadTarget"/> was set to main thread.</exception>
     public void Invoke(IEvent eventInstance)
     {
+        using var activity = EventAggregatorDiagnostics.Source.StartActivity($"Invoke handler {_handler.Method}");
+
+        activity?.SetTag(EventAggregatorDiagnostics.TagEventType, typeof(T).FullName);
+        activity?.SetTag(EventAggregatorDiagnostics.TagHandlerMethod, _handler.Method);
+        activity?.SetTag(EventAggregatorDiagnostics.TagOptionEventPriority, SubscriptionOptions.EventPriority);
+        activity?.SetTag(EventAggregatorDiagnostics.TagOptionIgnoreCancelled, SubscriptionOptions.IgnoreCancelled);
+        activity?.SetTag(EventAggregatorDiagnostics.TagOptionThreadTarget, SubscriptionOptions.ThreadTarget);
+
         if (IsDisposed)
         {
             ThrowHelper.ThrowObjectDisposedException(nameof(Subscription<T>));
@@ -138,11 +147,8 @@ public class Subscription<T> : IInternalSubscription
         }
         catch (Exception e)
         {
-            _logger.LogError(
-                EventAggregatorErrors.ErrorDuringSubscriptionExecution,
-                e,
-                "An error occured during {0} subscription",
-                typeof(T));
+            _logger.LogError(EventAggregatorErrors.ErrorDuringSubscriptionExecution, e,
+                "An error occured during {EventType} subscription", typeof(T));
         }
     }
 
@@ -150,14 +156,12 @@ public class Subscription<T> : IInternalSubscription
     {
         if (IsDataChaningEvent() && SubscriptionOptions.ThreadTarget != ThreadTarget.PublisherThread)
         {
-            throw new
-                InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
+            throw new InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
         }
 
         if (SubscriptionOptions.ThreadTarget == ThreadTarget.MainThread && _context == null)
         {
-            throw new
-                InvalidOperationException($"The {nameof(SynchronizationContext)} has to be set in order to use {nameof(ThreadTarget.MainThread)}");
+            throw new InvalidOperationException($"The {nameof(SynchronizationContext)} has to be set in order to use {nameof(ThreadTarget.MainThread)}");
         }
     }
 }
