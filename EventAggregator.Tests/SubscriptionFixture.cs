@@ -34,91 +34,111 @@ public class SubscriptionFixture
     [TestInitialize]
     public void Setup()
     {
-            _synchronizationContext = new TestSynchronizationContext();
-            _handleAction = () => { };
-            _logger = new NullLogger<ISubscription>();
+        _synchronizationContext = new TestSynchronizationContext();
+        _handleAction = () => { };
+        _logger = new NullLogger<ISubscription>();
 
-            SynchronizationContext.SetSynchronizationContext(_synchronizationContext);
+        SynchronizationContext.SetSynchronizationContext(_synchronizationContext);
 
-            _publisherThreadSubscription = new Subscription<TestEvent>(
-                                                            _logger,
-                                                            e =>
-                                                            {
-                                                                _passedEvent = e;
-                                                                _handleCounter++;
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-                                                                _handleAction();
-                                                            },
-                                                            false,
-                                                            EventPriority.Normal,
-                                                            ThreadTarget.PublisherThread,
-                                                            _synchronizationContext,
-                                                            () => _subscribeStatus = false);
+        _publisherThreadSubscription = new Subscription<TestEvent>(
+            _logger,
+            e =>
+            {
+                _passedEvent = e;
+                _handleCounter++;
 
-            _mainThreadSubscription = new Subscription<TestEvent>(
-                                                                      _logger,
-                                                                      e =>
-                                                                      {
-                                                                          _passedEvent = e;
-                                                                          _handleCounter++;
+                _handleAction();
+            },
+            options,
+            _synchronizationContext,
+            () => _subscribeStatus = false);
 
-                                                                          _handleAction();
-                                                                      },
-                                                                      false,
-                                                                      EventPriority.Normal,
-                                                                      ThreadTarget.MainThread,
-                                                                      _synchronizationContext,
-                                                                      () => _subscribeStatus = false);
+        var secondOptions = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.MainThread,
+        };
 
-            _backgroundThreadSubscription = new Subscription<TestEvent>(
-                                                                            _logger,
-                                                                            e =>
-                                                                            {
-                                                                                _passedEvent = e;
-                                                                                _handleCounter++;
+        _mainThreadSubscription = new Subscription<TestEvent>(
+            _logger,
+            e =>
+            {
+                _passedEvent = e;
+                _handleCounter++;
 
-                                                                                _handleAction();
-                                                                            },
-                                                                            false,
-                                                                            EventPriority.Normal,
-                                                                            ThreadTarget.BackgroundThread,
-                                                                            _synchronizationContext,
-                                                                            () => _subscribeStatus = false);
-        }
+                _handleAction();
+            },
+            secondOptions,
+            _synchronizationContext,
+            () => _subscribeStatus = false);
+
+        var thirdOptions = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.BackgroundThread,
+        };
+
+        _backgroundThreadSubscription = new Subscription<TestEvent>(
+            _logger,
+            e =>
+            {
+                _passedEvent = e;
+                _handleCounter++;
+
+                _handleAction();
+            },
+            thirdOptions,
+            _synchronizationContext,
+            () => _subscribeStatus = false);
+    }
 
     [TestCleanup]
     public void Teardown()
     {
-            _handleCounter = 0;
-            _subscribeStatus = true;
-            _publisherThreadSubscription = null;
-            _passedEvent = null;
-            _synchronizationContext = null;
+        _handleCounter = 0;
+        _subscribeStatus = true;
+        _publisherThreadSubscription = null;
+        _passedEvent = null;
+        _synchronizationContext = null;
 
-            SynchronizationContext.SetSynchronizationContext(null);
-        }
+        SynchronizationContext.SetSynchronizationContext(null);
+    }
 
     [TestMethod]
     public void CreationOfSubscriptionShouldWork()
     {
-            var called = false;
-            var unsubscribed = false;
+        var called = false;
+        var unsubscribed = false;
 
-            var subscription = new Subscription<TestEvent>(
-                                        _logger,
-                                        e => called = true,
-                                        false,
-                                        EventPriority.Normal,
-                                        ThreadTarget.PublisherThread,
-                                        _synchronizationContext,
-                                        () => unsubscribed = true);
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            called.Should().BeFalse();
-            unsubscribed.Should().BeFalse();
-            subscription.IsDisposed.Should().BeFalse();
-            subscription.Type.Should().Be(typeof(TestEvent));
-            subscription.IgnoreCancelled.Should().BeFalse();
-        }
+        var subscription = new Subscription<TestEvent>(
+            _logger,
+            e => called = true,
+            options,
+            _synchronizationContext,
+            () => unsubscribed = true);
+
+        called.Should().BeFalse();
+        unsubscribed.Should().BeFalse();
+        subscription.IsDisposed.Should().BeFalse();
+        subscription.Type.Should().Be(typeof(TestEvent));
+        subscription.SubscriptionOptions.IgnoreCancelled.Should().BeFalse();
+    }
 
     [TestMethod]
     [DataRow(EventPriority.Lowest)]
@@ -129,17 +149,22 @@ public class SubscriptionFixture
     [DataRow(EventPriority.Monitor)]
     public void SubscriptionPriorityWillBeSet(EventPriority priority)
     {
-            var subscription = new Subscription<TestEvent>(
-                                                           _logger,
-                                                           e => {},
-                                                           false,
-                                                           priority,
-                                                           ThreadTarget.PublisherThread,
-                                                           _synchronizationContext,
-                                                           () => {});
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = priority,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            subscription.Priority.Should().Be(priority);
-        }
+        var subscription = new Subscription<TestEvent>(
+            _logger,
+            e => {},
+            options,
+            _synchronizationContext,
+            () => {});
+
+        subscription.SubscriptionOptions.EventPriority.Should().Be(priority);
+    }
 
     [TestMethod]
     [DataRow(ThreadTarget.BackgroundThread)]
@@ -147,143 +172,173 @@ public class SubscriptionFixture
     [DataRow(ThreadTarget.PublisherThread)]
     public void SubscriptionThreadTargetWillBeSet(ThreadTarget threadTarget)
     {
-            var subscription = new Subscription<TestEvent>(
-                                                           _logger,
-                                                           e => {},
-                                                           false,
-                                                           EventPriority.Normal,
-                                                           threadTarget,
-                                                           _synchronizationContext,
-                                                           () => {});
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = threadTarget,
+        };
 
-            subscription.ThreadTarget.Should().Be(threadTarget);
-        }
+        var subscription = new Subscription<TestEvent>(
+            _logger,
+            e => {},
+            options,
+            _synchronizationContext,
+            () => {});
+
+        subscription.SubscriptionOptions.ThreadTarget.Should().Be(threadTarget);
+    }
 
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void SubscriptionIgnoreCancelledWillBeSet(bool ignoreCancelled)
     {
-            var subscription = new Subscription<TestEvent>(
-                                                           _logger,
-                                                           e => {},
-                                                           ignoreCancelled,
-                                                           EventPriority.Normal,
-                                                           ThreadTarget.PublisherThread,
-                                                           _synchronizationContext,
-                                                           () => {});
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = ignoreCancelled,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            subscription.IgnoreCancelled.Should().Be(ignoreCancelled);
-        }
+        var subscription = new Subscription<TestEvent>(
+            _logger,
+            e => {},
+            options,
+            _synchronizationContext,
+            () => {});
+
+        subscription.SubscriptionOptions.IgnoreCancelled.Should().Be(ignoreCancelled);
+    }
 
     [TestMethod]
     public void CreationOfSubscriptionWithNullHandlerThrowsException()
     {
-            Action act = () => new Subscription<TestEvent>(
-                                                           _logger,
-                                                           null,
-                                                           false,
-                                                           EventPriority.Normal,
-                                                           ThreadTarget.PublisherThread,
-                                                           _synchronizationContext,
-                                                           () => { });
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            act.Should().Throw<ArgumentNullException>().WithMessage("*handler*");
-        }
+        Action act = () => new Subscription<TestEvent>(
+            _logger,
+            null,
+            options,
+            _synchronizationContext,
+            () => { });
+
+        act.Should().Throw<ArgumentNullException>().WithMessage("*handler*");
+    }
 
     [TestMethod]
     public void CreationOfSubscriptionWithNullUnsubscriberThrowsException()
     {
-            Action act = () => new Subscription<TestEvent>(
-                                                           _logger,
-                                                           e => { },
-                                                           false,
-                                                           EventPriority.Normal,
-                                                           ThreadTarget.PublisherThread,
-                                                           _synchronizationContext,
-                                                           null);
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            act.Should().Throw<ArgumentNullException>().WithMessage("*unsubscribeAction*");
-        }
+        Action act = () => new Subscription<TestEvent>(
+            _logger,
+            e => { },
+            options,
+            _synchronizationContext,
+            null);
+
+        act.Should().Throw<ArgumentNullException>().WithMessage("*unsubscribeAction*");
+    }
 
     [TestMethod]
     public void CreationOfSubscriptionWithNullLoggerThrowsThrowsException()
     {
-            Action act = () => new Subscription<TestEvent>(
-                                                           null,
-                                                           e => { },
-                                                           false,
-                                                           EventPriority.Normal,
-                                                           ThreadTarget.PublisherThread,
-                                                           _synchronizationContext,
-                                                           () => { });
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            act.Should().Throw<ArgumentNullException>().WithMessage("*logger*");
-        }
+        Action act = () => new Subscription<TestEvent>(
+            null,
+            e => { },
+            options,
+            _synchronizationContext,
+            () => { });
+
+        act.Should().Throw<ArgumentNullException>().WithMessage("*logger*");
+    }
 
     [TestMethod]
     public void InvokingEventWithNullThrowsArgumentNullException()
     {
-            Action act = () => _publisherThreadSubscription.Invoke(null);
+        Action act = () => _publisherThreadSubscription.Invoke(null);
 
-            act.Should().Throw<ArgumentNullException>("*eventInstance*");
-        }
+        act.Should().Throw<ArgumentNullException>("*eventInstance*");
+    }
 
     [TestMethod]
     public void DisposingSubscriptionCallsUnsubscription()
     {
-            _publisherThreadSubscription.Dispose();
+        _publisherThreadSubscription.Dispose();
 
-            _subscribeStatus.Should().BeFalse();
-            _publisherThreadSubscription.IsDisposed.Should().BeTrue();
-        }
+        _subscribeStatus.Should().BeFalse();
+        _publisherThreadSubscription.IsDisposed.Should().BeTrue();
+    }
 
     [TestMethod]
     public void DisposingSubscriptionThrowsExceptionsOnMethods()
     {
-            _publisherThreadSubscription.Dispose();
+        _publisherThreadSubscription.Dispose();
 
-            Action actDispose = () => _publisherThreadSubscription.Dispose();
-            actDispose.Should().Throw<ObjectDisposedException>();
+        Action actDispose = () => _publisherThreadSubscription.Dispose();
+        actDispose.Should().Throw<ObjectDisposedException>();
 
-            Action actInvoke = () => _publisherThreadSubscription.Invoke(new TestEvent());
-            actInvoke.Should().Throw<ObjectDisposedException>();
-        }
+        Action actInvoke = () => _publisherThreadSubscription.Invoke(new TestEvent());
+        actInvoke.Should().Throw<ObjectDisposedException>();
+    }
 
     [TestMethod]
     public void CreatingSubscriptionWithInvalidThreadTargetThrowsException()
     {
-            Action act = () => new Subscription<TestEvent>(
-                                                           _logger,
-                                                           e => { },
-                                                           false,
-                                                           EventPriority.Normal,
-                                                           (ThreadTarget) int.MaxValue,
-                                                           _synchronizationContext,
-                                                           () => { });
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = (ThreadTarget) int.MaxValue,
+        };
 
-            act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*threadTarget*");
-        }
+        Action act = () => new Subscription<TestEvent>(
+            _logger,
+            e => { },
+            options,
+            _synchronizationContext,
+            () => { });
+
+        act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*threadTarget*");
+    }
 
     [TestMethod]
     public void InvokingSubscriptionCallsHandlerWithCorreltArguments()
     {
-            var eventData = new TestEvent();
+        var eventData = new TestEvent();
 
-            _publisherThreadSubscription.Invoke(eventData);
+        _publisherThreadSubscription.Invoke(eventData);
 
-            _passedEvent.Should().Be(eventData);
-        }
+        _passedEvent.Should().Be(eventData);
+    }
 
     [TestMethod]
     public void InvokingEventWithWrongInstanceThrowsArgumentException()
     {
-            var eventData = new OtherTestEvent();
+        var eventData = new OtherTestEvent();
 
-            Action act = () => _publisherThreadSubscription.Invoke(eventData);
+        Action act = () => _publisherThreadSubscription.Invoke(eventData);
 
-            act.Should().Throw<ArgumentException>();
-        }
+        act.Should().Throw<ArgumentException>();
+    }
 
     [TestMethod]
     [DataRow(1)]
@@ -292,102 +347,112 @@ public class SubscriptionFixture
     [DataRow(100)]
     public void InvokingSubscriptionMultipleTimesCallsTheseAmount(int amount)
     {
-            for (var i = 0; i < amount; i++)
-            {
-                _publisherThreadSubscription.Invoke(new TestEvent());
-            }
-
-            _handleCounter.Should().Be(amount);
+        for (var i = 0; i < amount; i++)
+        {
+            _publisherThreadSubscription.Invoke(new TestEvent());
         }
+
+        _handleCounter.Should().Be(amount);
+    }
 
     [TestMethod]
     public void InvokingMainThreadSubscriptionCallsSynchronizationContext()
     {
-            _mainThreadSubscription.Invoke(new TestEvent());
+        _mainThreadSubscription.Invoke(new TestEvent());
 
-            _synchronizationContext.InvokeAmount.Should().Be(1);
-        }
+        _synchronizationContext.InvokeAmount.Should().Be(1);
+    }
 
     [TestMethod]
     public void InvokingPublisherThreadSubscriptionDoesNotCallSubscriptionContext()
     {
-            _publisherThreadSubscription.Invoke(new TestEvent());
+        _publisherThreadSubscription.Invoke(new TestEvent());
 
-            _synchronizationContext.InvokeAmount.Should().Be(0);
-        }
+        _synchronizationContext.InvokeAmount.Should().Be(0);
+    }
 
     [TestMethod]
     public void InvokingBackgroundThreadSubscriptionDoesNotCallSubscriptionContext()
     {
-            _backgroundThreadSubscription.Invoke(new TestEvent());
+        _backgroundThreadSubscription.Invoke(new TestEvent());
 
-            _synchronizationContext.InvokeAmount.Should().Be(0);
-        }
+        _synchronizationContext.InvokeAmount.Should().Be(0);
+    }
 
     [TestMethod]
     public void ThrowingExceptionInsideHandlerCatchesException()
     {
-            _handleAction = () => throw new Exception("Test");
+        _handleAction = () => throw new Exception("Test");
 
-            Action act = () => _publisherThreadSubscription.Invoke(new TestEvent());
-            act.Should().NotThrow();
+        Action act = () => _publisherThreadSubscription.Invoke(new TestEvent());
+        act.Should().NotThrow();
 
-            Action mainAct = () => _mainThreadSubscription.Invoke(new TestEvent());
-            mainAct.Should().NotThrow();
+        Action mainAct = () => _mainThreadSubscription.Invoke(new TestEvent());
+        mainAct.Should().NotThrow();
 
-            Action backgroundAct = () => _backgroundThreadSubscription.Invoke(new TestEvent());
-            backgroundAct.Should().NotThrow();
-        }
+        Action backgroundAct = () => _backgroundThreadSubscription.Invoke(new TestEvent());
+        backgroundAct.Should().NotThrow();
+    }
 
     [TestMethod]
     public void InvokingDataChangingEventWillKeepInstanceSame()
     {
-            var eventData = new DataChangingEvent
-            {
-                Number = 5,
-            };
+        var eventData = new DataChangingEvent
+        {
+            Number = 5,
+        };
 
-            var subscription = new Subscription<DataChangingEvent>(
-                                                                   _logger,
-                                                                   e => { e.Number = 2; },
-                                                                   false,
-                                                                   EventPriority.Normal,
-                                                                   ThreadTarget.PublisherThread,
-                                                                   _synchronizationContext,
-                                                                   () => { });
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = ThreadTarget.PublisherThread,
+        };
 
-            subscription.Invoke(eventData);
+        var subscription = new Subscription<DataChangingEvent>(
+            _logger,
+            e => { e.Number = 2; },
+            options,
+            _synchronizationContext,
+            () => { });
 
-            eventData.Number.Should().Be(2);
-            eventData.NumberChangeAmount.Should().Be(2);
-        }
+        subscription.Invoke(eventData);
+
+        eventData.Number.Should().Be(2);
+        eventData.NumberChangeAmount.Should().Be(2);
+    }
 
     [TestMethod]
     [DataRow(ThreadTarget.BackgroundThread)]
     [DataRow(ThreadTarget.MainThread)]
     public void SubscribingToDataChangingEventInNonPublishThreadThrowsException(ThreadTarget threadTarget)
     {
-            Action act = () => new Subscription<DataChangingEvent>(
-                                                                   _logger,
-                                                                   _ => { },
-                                                                   false,
-                                                                   EventPriority.Normal,
-                                                                   threadTarget,
-                                                                   _synchronizationContext,
-                                                                   () => { });
+        var options = new SubscriptionOptions
+        {
+            IgnoreCancelled = false,
+            EventPriority = EventPriority.Normal,
+            ThreadTarget = threadTarget,
+        };
 
-            act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
-        }
+        Action act = () => new Subscription<DataChangingEvent>(
+            _logger,
+            _ => { },
+            options,
+            _synchronizationContext,
+            () => { });
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
+    }
 
     [TestMethod]
     public void CancellableEventInterfacesImplementsRightInterfaces()
     {
-            typeof(ICancellableEvent).Should().Implement<IEvent>().And.Implement<IDataChangingEvent>();
-        }
+        typeof(ICancellableEvent).Should().Implement<IEvent>().And.Implement<IDataChangingEvent>();
+    }
 
     [TestMethod]
     public void DataChangingEventInterfacesImplementsRightInterfaces()
     {
-            typeof(IDataChangingEvent).Should().Implement<IEvent>();
-        }
+        typeof(IDataChangingEvent).Should().Implement<IEvent>();
+    }
 }

@@ -24,9 +24,9 @@ public class SampleService
         _eventAggregator.Subscribe<UserConnectedEvent>(OnUserConnectedAsync);
         _eventAggregator.Subscribe<UserSendMessageEvent>(OnGuestSendsMessage);
         _eventAggregator.Subscribe<UserPurchaseItemEvent>(OnUserPurchasedItem);
-        _eventAggregator.Subscribe<UserPermissionRequestEvent>(OnPermissionRequest, eventPriority: EventPriority.Lowest);
+        _eventAggregator.Subscribe<UserPermissionRequestEvent>(OnPermissionRequest, x => x.EventPriority = EventPriority.Lowest);
         _eventAggregator.Subscribe<UserPermissionRequestEvent>(OnModeratorPermissionRequest);
-        _eventAggregator.Subscribe<UserPermissionRequestEvent>(OnSpecialUserPermissionRequest, eventPriority: EventPriority.Highest);
+        _eventAggregator.Subscribe<UserPermissionRequestEvent>(OnSpecialUserPermissionRequest, x => x.EventPriority = EventPriority.Highest);
     }
 
     private async Task OnUserConnectedAsync(UserConnectedEvent eventdata)
