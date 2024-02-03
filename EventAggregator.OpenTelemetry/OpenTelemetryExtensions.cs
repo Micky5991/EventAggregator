@@ -1,8 +1,7 @@
-using Micky5991.EventAggregator;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-namespace EventAggregator.OpenTelemetry;
+namespace Micky5991.EventAggregator.OpenTelemetry;
 
 public static class OpenTelemetryExtensions
 {

@@ -4,6 +4,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyName>Micky5991.EventAggregator.OpenTelemetry</AssemblyName>
+        <RootNamespace>Micky5991.EventAggregator.OpenTelemetry</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
