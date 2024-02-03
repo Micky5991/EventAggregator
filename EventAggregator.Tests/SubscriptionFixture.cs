@@ -13,87 +13,87 @@ namespace Micky5991.EventAggregator.Tests;
 [TestClass]
 public class SubscriptionFixture
 {
-    private IEvent passedEvent;
+    private IEvent _passedEvent;
 
-    private int handleCounter;
+    private int _handleCounter;
 
-    private bool subscribeStatus = true;
+    private bool _subscribeStatus = true;
 
-    private NullLogger<ISubscription> logger;
+    private NullLogger<ISubscription> _logger;
 
-    private Action handleAction;
+    private Action _handleAction;
 
-    private TestSynchronizationContext synchronizationContext;
+    private TestSynchronizationContext _synchronizationContext;
 
-    private Subscription<TestEvent> publisherThreadSubscription;
+    private Subscription<TestEvent> _publisherThreadSubscription;
 
-    private Subscription<TestEvent> mainThreadSubscription;
+    private Subscription<TestEvent> _mainThreadSubscription;
 
-    private Subscription<TestEvent> backgroundThreadSubscription;
+    private Subscription<TestEvent> _backgroundThreadSubscription;
 
     [TestInitialize]
     public void Setup()
     {
-            this.synchronizationContext = new TestSynchronizationContext();
-            this.handleAction = () => { };
-            this.logger = new NullLogger<ISubscription>();
+            this._synchronizationContext = new TestSynchronizationContext();
+            this._handleAction = () => { };
+            this._logger = new NullLogger<ISubscription>();
 
-            SynchronizationContext.SetSynchronizationContext(this.synchronizationContext);
+            SynchronizationContext.SetSynchronizationContext(this._synchronizationContext);
 
-            this.publisherThreadSubscription = new Subscription<TestEvent>(
-                                                            this.logger,
+            this._publisherThreadSubscription = new Subscription<TestEvent>(
+                                                            this._logger,
                                                             e =>
                                                             {
-                                                                this.passedEvent = e;
-                                                                this.handleCounter++;
+                                                                this._passedEvent = e;
+                                                                this._handleCounter++;
 
-                                                                this.handleAction();
+                                                                this._handleAction();
                                                             },
                                                             false,
                                                             EventPriority.Normal,
                                                             ThreadTarget.PublisherThread,
-                                                            this.synchronizationContext,
-                                                            () => this.subscribeStatus = false);
+                                                            this._synchronizationContext,
+                                                            () => this._subscribeStatus = false);
 
-            this.mainThreadSubscription = new Subscription<TestEvent>(
-                                                                      this.logger,
+            this._mainThreadSubscription = new Subscription<TestEvent>(
+                                                                      this._logger,
                                                                       e =>
                                                                       {
-                                                                          this.passedEvent = e;
-                                                                          this.handleCounter++;
+                                                                          this._passedEvent = e;
+                                                                          this._handleCounter++;
 
-                                                                          this.handleAction();
+                                                                          this._handleAction();
                                                                       },
                                                                       false,
                                                                       EventPriority.Normal,
                                                                       ThreadTarget.MainThread,
-                                                                      this.synchronizationContext,
-                                                                      () => this.subscribeStatus = false);
+                                                                      this._synchronizationContext,
+                                                                      () => this._subscribeStatus = false);
 
-            this.backgroundThreadSubscription = new Subscription<TestEvent>(
-                                                                            this.logger,
+            this._backgroundThreadSubscription = new Subscription<TestEvent>(
+                                                                            this._logger,
                                                                             e =>
                                                                             {
-                                                                                this.passedEvent = e;
-                                                                                this.handleCounter++;
+                                                                                this._passedEvent = e;
+                                                                                this._handleCounter++;
 
-                                                                                this.handleAction();
+                                                                                this._handleAction();
                                                                             },
                                                                             false,
                                                                             EventPriority.Normal,
                                                                             ThreadTarget.BackgroundThread,
-                                                                            this.synchronizationContext,
-                                                                            () => this.subscribeStatus = false);
+                                                                            this._synchronizationContext,
+                                                                            () => this._subscribeStatus = false);
         }
 
     [TestCleanup]
     public void Teardown()
     {
-            this.handleCounter = 0;
-            this.subscribeStatus = true;
-            this.publisherThreadSubscription = null;
-            this.passedEvent = null;
-            this.synchronizationContext = null;
+            this._handleCounter = 0;
+            this._subscribeStatus = true;
+            this._publisherThreadSubscription = null;
+            this._passedEvent = null;
+            this._synchronizationContext = null;
 
             SynchronizationContext.SetSynchronizationContext(null);
         }
@@ -105,12 +105,12 @@ public class SubscriptionFixture
             var unsubscribed = false;
 
             var subscription = new Subscription<TestEvent>(
-                                        this.logger,
+                                        this._logger,
                                         e => called = true,
                                         false,
                                         EventPriority.Normal,
                                         ThreadTarget.PublisherThread,
-                                        this.synchronizationContext,
+                                        this._synchronizationContext,
                                         () => unsubscribed = true);
 
             called.Should().BeFalse();
@@ -130,12 +130,12 @@ public class SubscriptionFixture
     public void SubscriptionPriorityWillBeSet(EventPriority priority)
     {
             var subscription = new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            e => {},
                                                            false,
                                                            priority,
                                                            ThreadTarget.PublisherThread,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => {});
 
             subscription.Priority.Should().Be(priority);
@@ -148,12 +148,12 @@ public class SubscriptionFixture
     public void SubscriptionThreadTargetWillBeSet(ThreadTarget threadTarget)
     {
             var subscription = new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            e => {},
                                                            false,
                                                            EventPriority.Normal,
                                                            threadTarget,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => {});
 
             subscription.ThreadTarget.Should().Be(threadTarget);
@@ -165,12 +165,12 @@ public class SubscriptionFixture
     public void SubscriptionIgnoreCancelledWillBeSet(bool ignoreCancelled)
     {
             var subscription = new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            e => {},
                                                            ignoreCancelled,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => {});
 
             subscription.IgnoreCancelled.Should().Be(ignoreCancelled);
@@ -180,12 +180,12 @@ public class SubscriptionFixture
     public void CreationOfSubscriptionWithNullHandlerThrowsException()
     {
             Action act = () => new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            null,
                                                            false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => { });
 
             act.Should().Throw<ArgumentNullException>().WithMessage("*handler*");
@@ -195,12 +195,12 @@ public class SubscriptionFixture
     public void CreationOfSubscriptionWithNullUnsubscriberThrowsException()
     {
             Action act = () => new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            e => { },
                                                            false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            null);
 
             act.Should().Throw<ArgumentNullException>().WithMessage("*unsubscribeAction*");
@@ -215,7 +215,7 @@ public class SubscriptionFixture
                                                            false,
                                                            EventPriority.Normal,
                                                            ThreadTarget.PublisherThread,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => { });
 
             act.Should().Throw<ArgumentNullException>().WithMessage("*logger*");
@@ -224,7 +224,7 @@ public class SubscriptionFixture
     [TestMethod]
     public void InvokingEventWithNullThrowsArgumentNullException()
     {
-            Action act = () => this.publisherThreadSubscription.Invoke(null);
+            Action act = () => this._publisherThreadSubscription.Invoke(null);
 
             act.Should().Throw<ArgumentNullException>("*eventInstance*");
         }
@@ -232,21 +232,21 @@ public class SubscriptionFixture
     [TestMethod]
     public void DisposingSubscriptionCallsUnsubscription()
     {
-            this.publisherThreadSubscription.Dispose();
+            this._publisherThreadSubscription.Dispose();
 
-            this.subscribeStatus.Should().BeFalse();
-            this.publisherThreadSubscription.IsDisposed.Should().BeTrue();
+            this._subscribeStatus.Should().BeFalse();
+            this._publisherThreadSubscription.IsDisposed.Should().BeTrue();
         }
 
     [TestMethod]
     public void DisposingSubscriptionThrowsExceptionsOnMethods()
     {
-            this.publisherThreadSubscription.Dispose();
+            this._publisherThreadSubscription.Dispose();
 
-            Action actDispose = () => this.publisherThreadSubscription.Dispose();
+            Action actDispose = () => this._publisherThreadSubscription.Dispose();
             actDispose.Should().Throw<ObjectDisposedException>();
 
-            Action actInvoke = () => this.publisherThreadSubscription.Invoke(new TestEvent());
+            Action actInvoke = () => this._publisherThreadSubscription.Invoke(new TestEvent());
             actInvoke.Should().Throw<ObjectDisposedException>();
         }
 
@@ -254,12 +254,12 @@ public class SubscriptionFixture
     public void CreatingSubscriptionWithInvalidThreadTargetThrowsException()
     {
             Action act = () => new Subscription<TestEvent>(
-                                                           this.logger,
+                                                           this._logger,
                                                            e => { },
                                                            false,
                                                            EventPriority.Normal,
                                                            (ThreadTarget) int.MaxValue,
-                                                           this.synchronizationContext,
+                                                           this._synchronizationContext,
                                                            () => { });
 
             act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*threadTarget*");
@@ -270,9 +270,9 @@ public class SubscriptionFixture
     {
             var eventData = new TestEvent();
 
-            this.publisherThreadSubscription.Invoke(eventData);
+            this._publisherThreadSubscription.Invoke(eventData);
 
-            this.passedEvent.Should().Be(eventData);
+            this._passedEvent.Should().Be(eventData);
         }
 
     [TestMethod]
@@ -280,7 +280,7 @@ public class SubscriptionFixture
     {
             var eventData = new OtherTestEvent();
 
-            Action act = () => this.publisherThreadSubscription.Invoke(eventData);
+            Action act = () => this._publisherThreadSubscription.Invoke(eventData);
 
             act.Should().Throw<ArgumentException>();
         }
@@ -294,48 +294,48 @@ public class SubscriptionFixture
     {
             for (var i = 0; i < amount; i++)
             {
-                this.publisherThreadSubscription.Invoke(new TestEvent());
+                this._publisherThreadSubscription.Invoke(new TestEvent());
             }
 
-            this.handleCounter.Should().Be(amount);
+            this._handleCounter.Should().Be(amount);
         }
 
     [TestMethod]
     public void InvokingMainThreadSubscriptionCallsSynchronizationContext()
     {
-            this.mainThreadSubscription.Invoke(new TestEvent());
+            this._mainThreadSubscription.Invoke(new TestEvent());
 
-            this.synchronizationContext.InvokeAmount.Should().Be(1);
+            this._synchronizationContext.InvokeAmount.Should().Be(1);
         }
 
     [TestMethod]
     public void InvokingPublisherThreadSubscriptionDoesNotCallSubscriptionContext()
     {
-            this.publisherThreadSubscription.Invoke(new TestEvent());
+            this._publisherThreadSubscription.Invoke(new TestEvent());
 
-            this.synchronizationContext.InvokeAmount.Should().Be(0);
+            this._synchronizationContext.InvokeAmount.Should().Be(0);
         }
 
     [TestMethod]
     public void InvokingBackgroundThreadSubscriptionDoesNotCallSubscriptionContext()
     {
-            this.backgroundThreadSubscription.Invoke(new TestEvent());
+            this._backgroundThreadSubscription.Invoke(new TestEvent());
 
-            this.synchronizationContext.InvokeAmount.Should().Be(0);
+            this._synchronizationContext.InvokeAmount.Should().Be(0);
         }
 
     [TestMethod]
     public void ThrowingExceptionInsideHandlerCatchesException()
     {
-            this.handleAction = () => throw new Exception("Test");
+            this._handleAction = () => throw new Exception("Test");
 
-            Action act = () => this.publisherThreadSubscription.Invoke(new TestEvent());
+            Action act = () => this._publisherThreadSubscription.Invoke(new TestEvent());
             act.Should().NotThrow();
 
-            Action mainAct = () => this.mainThreadSubscription.Invoke(new TestEvent());
+            Action mainAct = () => this._mainThreadSubscription.Invoke(new TestEvent());
             mainAct.Should().NotThrow();
 
-            Action backgroundAct = () => this.backgroundThreadSubscription.Invoke(new TestEvent());
+            Action backgroundAct = () => this._backgroundThreadSubscription.Invoke(new TestEvent());
             backgroundAct.Should().NotThrow();
         }
 
@@ -348,12 +348,12 @@ public class SubscriptionFixture
             };
 
             var subscription = new Subscription<DataChangingEvent>(
-                                                                   this.logger,
+                                                                   this._logger,
                                                                    e => { e.Number = 2; },
                                                                    false,
                                                                    EventPriority.Normal,
                                                                    ThreadTarget.PublisherThread,
-                                                                   this.synchronizationContext,
+                                                                   this._synchronizationContext,
                                                                    () => { });
 
             subscription.Invoke(eventData);
@@ -368,12 +368,12 @@ public class SubscriptionFixture
     public void SubscribingToDataChangingEventInNonPublishThreadThrowsException(ThreadTarget threadTarget)
     {
             Action act = () => new Subscription<DataChangingEvent>(
-                                                                   this.logger,
+                                                                   this._logger,
                                                                    _ => { },
                                                                    false,
                                                                    EventPriority.Normal,
                                                                    threadTarget,
-                                                                   this.synchronizationContext,
+                                                                   this._synchronizationContext,
                                                                    () => { });
 
             act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");

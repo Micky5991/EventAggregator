@@ -18,35 +18,35 @@ namespace Micky5991.EventAggregator.Tests;
 public class EventAggregatorFixture
 {
 
-    private ILogger<ISubscription> subscriptionLogger;
+    private ILogger<ISubscription> _subscriptionLogger;
 
-    private TestSynchronizationContext synchronizationContext;
+    private TestSynchronizationContext _synchronizationContext;
 
-    private EventAggregatorService eventAggregator;
+    private EventAggregatorService _eventAggregator;
 
     [TestInitialize]
     public void Setup()
     {
-            this.subscriptionLogger = new NullLogger<ISubscription>();
-            this.synchronizationContext = new TestSynchronizationContext();
+            this._subscriptionLogger = new NullLogger<ISubscription>();
+            this._synchronizationContext = new TestSynchronizationContext();
 
-            this.eventAggregator = new EventAggregatorService(this.subscriptionLogger);
-            this.eventAggregator.SetMainThreadSynchronizationContext(this.synchronizationContext);
+            this._eventAggregator = new EventAggregatorService(this._subscriptionLogger);
+            this._eventAggregator.SetMainThreadSynchronizationContext(this._synchronizationContext);
         }
 
     [TestCleanup]
     public void Teardown()
     {
-            this.subscriptionLogger = null;
-            this.synchronizationContext = null;
+            this._subscriptionLogger = null;
+            this._synchronizationContext = null;
 
-            this.eventAggregator = null;
+            this._eventAggregator = null;
         }
 
     [TestMethod]
     public void BuildEventAggregatorWorks()
     {
-            var aggregator = new EventAggregatorService(this.subscriptionLogger);
+            var aggregator = new EventAggregatorService(this._subscriptionLogger);
         }
 
     [TestMethod]
@@ -60,7 +60,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventAggregatorWithoutSynchronizationContextThrowsException()
     {
-            var aggregator = new EventAggregatorService(this.subscriptionLogger);
+            var aggregator = new EventAggregatorService(this._subscriptionLogger);
 
             Action act = () => aggregator.Subscribe<TestEvent>(
                                                                x => {},
@@ -77,7 +77,7 @@ public class EventAggregatorFixture
     [DataRow(ThreadTarget.PublisherThread)]
     public void SubscribeEventWithTargetThatDoesntUseMainThreadContextWorks(ThreadTarget threadTarget)
     {
-            var subscription = new EventAggregatorService(this.subscriptionLogger)
+            var subscription = new EventAggregatorService(this._subscriptionLogger)
                                    .Subscribe<TestEvent>(e => {}, false, EventPriority.Normal, threadTarget);
 
             subscription.Should().NotBeNull();
@@ -86,7 +86,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventWithTargetThatUsesMainThreadContextThrowsException()
     {
-            Action act = () => new EventAggregatorService(this.subscriptionLogger)
+            Action act = () => new EventAggregatorService(this._subscriptionLogger)
                                    .Subscribe<TestEvent>(e => {}, false, EventPriority.Normal, ThreadTarget.MainThread);
 
             act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(SynchronizationContext)}*");
@@ -95,7 +95,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventWithUnknownEventPriorityThrowsException()
     {
-            Action act = () => this.eventAggregator
+            Action act = () => this._eventAggregator
                                    .Subscribe<TestEvent>(e => { }, false, (EventPriority) int.MaxValue, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentOutOfRangeException>();
@@ -104,7 +104,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventWithUnknownThreadTargetThrowsException()
     {
-            Action act = () => this.eventAggregator
+            Action act = () => this._eventAggregator
                                    .Subscribe<TestEvent>(e => { }, false, EventPriority.Normal, (ThreadTarget) int.MaxValue);
 
             act.Should().Throw<ArgumentOutOfRangeException>();
@@ -113,7 +113,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeWithNullAsHandlerThrowsException()
     {
-            Action act = () => this.eventAggregator
+            Action act = () => this._eventAggregator
                                    .Subscribe<TestEvent>((IEventAggregator.EventHandlerDelegate<TestEvent>)null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentNullException>();
@@ -122,7 +122,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeWithNullAsAsyncHandlerThrowsException()
     {
-            Action act = () => this.eventAggregator
+            Action act = () => this._eventAggregator
                                    .Subscribe<TestEvent>((IEventAggregator.AsyncEventHandlerDelegate<TestEvent>)null, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
             act.Should().Throw<ArgumentNullException>();
@@ -137,7 +137,7 @@ public class EventAggregatorFixture
     [DataRow(EventPriority.Monitor)]
     public void EventPriorityWillBeSetInSubscription(EventPriority eventPriority)
     {
-            var subscription = this.eventAggregator
+            var subscription = this._eventAggregator
                                    .Subscribe<TestEvent>(e => { }, false, eventPriority, ThreadTarget.MainThread);
 
             subscription.Should().NotBeNull();
@@ -150,7 +150,7 @@ public class EventAggregatorFixture
     [DataRow(ThreadTarget.PublisherThread)]
     public void ThreadTargetWillBeSetInSubscription(ThreadTarget threadTarget)
     {
-            var subscription = this.eventAggregator
+            var subscription = this._eventAggregator
                                    .Subscribe<TestEvent>(e => { }, false, EventPriority.Normal, threadTarget);
 
             subscription.Should().NotBeNull();
@@ -160,7 +160,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void PublishingNullThrowsArgumentNullException()
     {
-            Action act = () => this.eventAggregator.Publish<TestEvent>(null);
+            Action act = () => this._eventAggregator.Publish<TestEvent>(null);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -171,9 +171,9 @@ public class EventAggregatorFixture
             TestEvent receivedEvent = null;
             var sentEvent = new TestEvent();
 
-            this.eventAggregator.Subscribe<TestEvent>(e => receivedEvent = e, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this._eventAggregator.Subscribe<TestEvent>(e => receivedEvent = e, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(sentEvent);
+            this._eventAggregator.Publish(sentEvent);
 
             receivedEvent.Should().BeSameAs(sentEvent);
         }
@@ -183,16 +183,16 @@ public class EventAggregatorFixture
     {
             var calls = new List<int>();
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             calls.Should()
                  .HaveCount(3)
@@ -204,25 +204,25 @@ public class EventAggregatorFixture
     {
             var calls = new List<int>();
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Lowest, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Low, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(4), false, EventPriority.High, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(5), false, EventPriority.Highest, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(6), false, EventPriority.Monitor, ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             calls.Should()
                  .HaveCount(6)
@@ -234,19 +234,19 @@ public class EventAggregatorFixture
     {
             var calls = new List<int>();
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(1), false, EventPriority.Lowest, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(2), false, EventPriority.Low, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => throw new Exception("OMEGALUL"), false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator
+            this._eventAggregator
                 .Subscribe<TestEvent>(e => calls.Add(3), false, EventPriority.High, ThreadTarget.PublisherThread);
 
-            Action act = () => this.eventAggregator.Publish(new TestEvent());
+            Action act = () => this._eventAggregator.Publish(new TestEvent());
 
             act.Should().NotThrow();
 
@@ -258,7 +258,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void PublishingOtherEventDoesNothing()
     {
-            Action act = () => this.eventAggregator.Publish(new OtherTestEvent());
+            Action act = () => this._eventAggregator.Publish(new OtherTestEvent());
 
             act.Should().NotThrow();
         }
@@ -269,10 +269,10 @@ public class EventAggregatorFixture
             var wrongCalled = false;
             var rightCalled = false;
 
-            this.eventAggregator.Subscribe<TestEvent>(_ => wrongCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
-            this.eventAggregator.Subscribe<OtherTestEvent>(_ => rightCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this._eventAggregator.Subscribe<TestEvent>(_ => wrongCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
+            this._eventAggregator.Subscribe<OtherTestEvent>(_ => rightCalled = true, false, EventPriority.Normal, ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new OtherTestEvent());
+            this._eventAggregator.Publish(new OtherTestEvent());
 
             wrongCalled.Should().BeFalse();
             rightCalled.Should().BeTrue();
@@ -283,7 +283,7 @@ public class EventAggregatorFixture
     {
             var subscription = Substitute.For<ISubscription>();
 
-            this.eventAggregator.Unsubscribe(subscription);
+            this._eventAggregator.Unsubscribe(subscription);
 
             subscription.Received(1).Dispose();
         }
@@ -291,7 +291,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void PassingNullToUnsubscribeThrowsException()
     {
-            Action act = () => this.eventAggregator.Unsubscribe(null);
+            Action act = () => this._eventAggregator.Unsubscribe(null);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -301,17 +301,17 @@ public class EventAggregatorFixture
     {
             var calledAmount = 0;
 
-            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+            var subscription = this._eventAggregator.Subscribe<TestEvent>(
                                                                          _ => calledAmount++,
                                                                          false,
                                                                          EventPriority.Normal,
                                                                          ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             subscription.Dispose();
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             subscription.IsDisposed.Should().BeTrue();
             calledAmount.Should().Be(1);
@@ -322,13 +322,13 @@ public class EventAggregatorFixture
     {
             var calledAmount = 0;
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              _ => calledAmount++,
                                                              false,
                                                              EventPriority.Normal,
                                                              ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new CancellableEvent());
+            this._eventAggregator.Publish(new CancellableEvent());
 
             calledAmount.Should().Be(1);
         }
@@ -338,13 +338,13 @@ public class EventAggregatorFixture
     {
             var calledAmount = 0;
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              _ => calledAmount++,
                                                              true,
                                                              EventPriority.Normal,
                                                              ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new CancellableEvent());
+            this._eventAggregator.Publish(new CancellableEvent());
 
             calledAmount.Should().Be(1);
         }
@@ -354,19 +354,19 @@ public class EventAggregatorFixture
     {
             var wrongCalledAmount = 0;
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              e => e.Cancelled = true,
                                                              false,
                                                              EventPriority.Low,
                                                              ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              e => wrongCalledAmount++,
                                                              true,
                                                              EventPriority.Normal,
                                                              ThreadTarget.PublisherThread);
 
-            var cancelledEvent = this.eventAggregator.Publish(new CancellableEvent());
+            var cancelledEvent = this._eventAggregator.Publish(new CancellableEvent());
 
             cancelledEvent.Cancelled.Should().Be(true);
 
@@ -378,19 +378,19 @@ public class EventAggregatorFixture
     {
             var correctCalledAmount = 0;
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              e => e.Cancelled = true,
                                                              false,
                                                              EventPriority.High,
                                                              ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Subscribe<CancellableEvent>(
+            this._eventAggregator.Subscribe<CancellableEvent>(
                                                              e => correctCalledAmount++,
                                                              true,
                                                              EventPriority.Normal,
                                                              ThreadTarget.PublisherThread);
 
-            var cancelledEvent = this.eventAggregator.Publish(new CancellableEvent());
+            var cancelledEvent = this._eventAggregator.Publish(new CancellableEvent());
 
             cancelledEvent.Cancelled.Should().Be(true);
 
@@ -402,19 +402,19 @@ public class EventAggregatorFixture
     {
             var wrongCalledAmount = 0;
 
-            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+            var subscription = this._eventAggregator.Subscribe<TestEvent>(
                                                                          e => wrongCalledAmount++,
                                                                          false,
                                                                          EventPriority.High,
                                                                          ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Subscribe<TestEvent>(
+            this._eventAggregator.Subscribe<TestEvent>(
                                                       e => subscription.Dispose(),
                                                       false,
                                                       EventPriority.Normal,
                                                       ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             wrongCalledAmount.Should().Be(0);
         }
@@ -427,7 +427,7 @@ public class EventAggregatorFixture
             var calledAmount = 0;
             ISubscription subscription = null;
 
-            subscription = this.eventAggregator.Subscribe<TestEvent>(
+            subscription = this._eventAggregator.Subscribe<TestEvent>(
                                                                      e =>
                                                                      {
                                                                          calledAmount++;
@@ -442,8 +442,8 @@ public class EventAggregatorFixture
                                                                      EventPriority.Normal,
                                                                      ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             calledAmount.Should().Be(1);
             wasDisposed.Should().BeTrue();
@@ -455,12 +455,12 @@ public class EventAggregatorFixture
             var calledAmount = 0;
             var innerCalledAmount = 0;
 
-            this.eventAggregator.Subscribe<TestEvent>(
+            this._eventAggregator.Subscribe<TestEvent>(
                                                       e =>
                                                       {
                                                           calledAmount++;
 
-                                                          this.eventAggregator.Subscribe<TestEvent>(
+                                                          this._eventAggregator.Subscribe<TestEvent>(
                                                            i =>innerCalledAmount++,
                                                            false,
                                                            EventPriority.Normal,
@@ -470,8 +470,8 @@ public class EventAggregatorFixture
                                                       EventPriority.Normal,
                                                       ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             calledAmount.Should().Be(2);
             innerCalledAmount.Should().Be(1);
@@ -482,7 +482,7 @@ public class EventAggregatorFixture
     [DataRow(ThreadTarget.MainThread)]
     public void SubscribingToDataChangingEventInWrongThreadTargetThrowsException(ThreadTarget threadTarget)
     {
-            Action act = () => this.eventAggregator.Subscribe<DataChangingEvent>(
+            Action act = () => this._eventAggregator.Subscribe<DataChangingEvent>(
              _ => { },
              false,
              EventPriority.Normal,
@@ -497,10 +497,10 @@ public class EventAggregatorFixture
             IEvent eventData = new TestEvent();
             var calledAmount = 0;
 
-            this.eventAggregator.Subscribe<TestEvent>(e => calledAmount++, false, EventPriority.Normal,
+            this._eventAggregator.Subscribe<TestEvent>(e => calledAmount++, false, EventPriority.Normal,
                                                       ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(eventData);
+            this._eventAggregator.Publish(eventData);
 
             calledAmount.Should().Be(1);
         }
@@ -508,7 +508,7 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribingToAsyncEventWillReturnCorrectly()
     {
-            var subscription = this.eventAggregator.Subscribe<TestEvent>(
+            var subscription = this._eventAggregator.Subscribe<TestEvent>(
                                                                          _ => Task.CompletedTask,
                                                                          false,
                                                                          EventPriority.Normal,
@@ -529,7 +529,7 @@ public class EventAggregatorFixture
     {
             var calledAmount = 0;
 
-            this.eventAggregator.Subscribe<TestEvent>(
+            this._eventAggregator.Subscribe<TestEvent>(
                                                                          _ =>
                                                                          {
                                                                              calledAmount++;
@@ -540,7 +540,7 @@ public class EventAggregatorFixture
                                                                          EventPriority.Normal,
                                                                          ThreadTarget.PublisherThread);
 
-            this.eventAggregator.Publish(new TestEvent());
+            this._eventAggregator.Publish(new TestEvent());
 
             await Task.Delay(TimeSpan.FromSeconds(1));
 

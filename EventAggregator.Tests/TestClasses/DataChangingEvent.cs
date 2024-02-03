@@ -5,17 +5,17 @@ namespace Micky5991.EventAggregator.Tests.TestClasses;
 
 public class DataChangingEvent : EventBase, IDataChangingEvent
 {
-    private int number;
+    private int _number;
 
     public int NumberChangeAmount { get; private set; }
 
     public int Number
     {
-        get => this.number;
+        get => this._number;
         set
         {
             this.NumberChangeAmount++;
-            this.number = value;
+            this._number = value;
         }
     }
 }

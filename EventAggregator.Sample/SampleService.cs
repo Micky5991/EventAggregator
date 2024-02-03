@@ -8,32 +8,32 @@ namespace Micky5991.EventAggregator.Sample;
 
 public class SampleService
 {
-    private readonly IEventAggregator eventAggregator;
+    private readonly IEventAggregator _eventAggregator;
 
-    private readonly ILogger<SampleService> logger;
+    private readonly ILogger<SampleService> _logger;
 
     public SampleService(IEventAggregator eventAggregator, ILogger<SampleService> logger)
     {
-            this.eventAggregator = eventAggregator;
-            this.logger = logger;
+            this._eventAggregator = eventAggregator;
+            this._logger = logger;
         }
 
     public void Initialize()
     {
-            this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnected);
-            this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnectedAsync);
-            this.eventAggregator.Subscribe<UserSendMessageEvent>(this.OnGuestSendsMessage);
-            this.eventAggregator.Subscribe<UserPurchaseItemEvent>(this.OnUserPurchasedItem);
-            this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnPermissionRequest, eventPriority: EventPriority.Lowest);
-            this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnModeratorPermissionRequest);
-            this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnSpecialUserPermissionRequest, eventPriority: EventPriority.Highest);
+            this._eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnected);
+            this._eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnectedAsync);
+            this._eventAggregator.Subscribe<UserSendMessageEvent>(this.OnGuestSendsMessage);
+            this._eventAggregator.Subscribe<UserPurchaseItemEvent>(this.OnUserPurchasedItem);
+            this._eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnPermissionRequest, eventPriority: EventPriority.Lowest);
+            this._eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnModeratorPermissionRequest);
+            this._eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnSpecialUserPermissionRequest, eventPriority: EventPriority.Highest);
         }
 
     private async Task OnUserConnectedAsync(UserConnectedEvent eventdata)
     {
             await Task.Delay(1000);
 
-            this.logger.LogInformation("{Username} CONNECTED", eventdata.Username);
+            this._logger.LogInformation("{Username} CONNECTED", eventdata.Username);
 
             throw new Exception("ERROR");
         }
@@ -61,18 +61,18 @@ public class SampleService
 
     public void SendMessage(string username, string message)
     {
-            var messageEvent = this.eventAggregator.Publish(new UserSendMessageEvent(username, message));
+            var messageEvent = this._eventAggregator.Publish(new UserSendMessageEvent(username, message));
             if (messageEvent.Cancelled == false)
             {
-                this.logger.LogInformation("{Username}: {Message}", messageEvent.Username, messageEvent.Message);
+                this._logger.LogInformation("{Username}: {Message}", messageEvent.Username, messageEvent.Message);
             }
         }
 
     public void PurchaseItem(string username, int price, string? usedCoupon = null)
     {
-            var purchasedEvent = this.eventAggregator.Publish(new UserPurchaseItemEvent(username, price, usedCoupon));
+            var purchasedEvent = this._eventAggregator.Publish(new UserPurchaseItemEvent(username, price, usedCoupon));
 
-            this.logger.LogInformation(
+            this._logger.LogInformation(
                                        "{Username} purchased item with code {UsedCoupon} for {Price} Coins",
                                        purchasedEvent.Username,
                                        purchasedEvent.UsedCoupon,
@@ -81,14 +81,14 @@ public class SampleService
 
     public bool HasPermission(string username, string role)
     {
-            var permissionRequest = this.eventAggregator.Publish(new UserPermissionRequestEvent(username, role));
+            var permissionRequest = this._eventAggregator.Publish(new UserPermissionRequestEvent(username, role));
 
             return permissionRequest.Cancelled == false;
         }
 
     private void OnUserConnected(UserConnectedEvent eventData)
     {
-            this.logger.LogInformation("User \"{Username}\" connected", eventData.Username);
+            this._logger.LogInformation("User \"{Username}\" connected", eventData.Username);
         }
 
     private void OnUserPurchasedItem(UserPurchaseItemEvent eventData)

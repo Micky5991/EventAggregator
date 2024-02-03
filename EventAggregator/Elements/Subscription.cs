@@ -15,13 +15,13 @@ namespace Micky5991.EventAggregator.Elements;
 public class Subscription<T> : IInternalSubscription
     where T : class, IEvent
 {
-    private readonly ILogger<ISubscription> logger;
+    private readonly ILogger<ISubscription> _logger;
 
-    private readonly IEventAggregator.EventHandlerDelegate<T> handler;
+    private readonly IEventAggregator.EventHandlerDelegate<T> _handler;
 
-    private readonly SynchronizationContext? context;
+    private readonly SynchronizationContext? _context;
 
-    private readonly Action unsubscribeAction;
+    private readonly Action _unsubscribeAction;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Subscription{T}"/> class.
@@ -64,10 +64,10 @@ public class Subscription<T> : IInternalSubscription
             throw new ArgumentNullException(nameof(logger));
         }
 
-        this.logger = logger;
-        this.handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        this.context = context;
-        this.unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
+        this._logger = logger;
+        this._handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        this._context = context;
+        this._unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
 
         this.IgnoreCancelled = ignoreCancelled;
         this.Priority = eventPriority;
@@ -120,13 +120,13 @@ public class Subscription<T> : IInternalSubscription
                 break;
 
             case ThreadTarget.MainThread:
-                if (this.context == null)
+                if (this._context == null)
                 {
                     throw new
                         InvalidOperationException($"Could not invoke subscription on {nameof(ThreadTarget.MainThread)} without {nameof(SynchronizationContext)} set.");
                 }
 
-                this.context.Post(_ => this.ExecuteSafely(instance), null);
+                this._context.Post(_ => this.ExecuteSafely(instance), null);
 
                 break;
 
@@ -148,7 +148,7 @@ public class Subscription<T> : IInternalSubscription
             ThrowHelper.ThrowObjectDisposedException(nameof(Subscription<T>));
         }
 
-        this.unsubscribeAction();
+        this._unsubscribeAction();
 
         GC.SuppressFinalize(this);
 
@@ -164,11 +164,11 @@ public class Subscription<T> : IInternalSubscription
     {
         try
         {
-            this.handler(eventInstance);
+            this._handler(eventInstance);
         }
         catch (Exception e)
         {
-            this.logger.LogError(
+            this._logger.LogError(
                 EventAggregatorErrors.ErrorDuringSubscriptionExecution,
                 e,
                 "An error occured during {0} subscription",
@@ -184,7 +184,7 @@ public class Subscription<T> : IInternalSubscription
                 InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
         }
 
-        if (this.ThreadTarget == ThreadTarget.MainThread && this.context == null)
+        if (this.ThreadTarget == ThreadTarget.MainThread && this._context == null)
         {
             throw new
                 InvalidOperationException($"The {nameof(SynchronizationContext)} has to be set in order to use {nameof(ThreadTarget.MainThread)}");
