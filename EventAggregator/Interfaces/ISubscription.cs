@@ -1,4 +1,5 @@
 using System;
+using Micky5991.EventAggregator.Elements;
 
 namespace Micky5991.EventAggregator.Interfaces;
 
@@ -8,19 +9,14 @@ namespace Micky5991.EventAggregator.Interfaces;
 public interface ISubscription : IDisposable
 {
     /// <summary>
-    /// Gets a value indicating whether the event should not be executed when the event was cancelled before.
+    /// Gets the configuration of this specific subscription.
     /// </summary>
-    bool IgnoreCancelled { get; }
+    SubscriptionOptions SubscriptionOptions { get; }
 
     /// <summary>
-    /// Gets priority that this subscription should be called.
+    /// Gets a reference to the wanted type of this handler.
     /// </summary>
-    EventPriority Priority { get; }
-
-    /// <summary>
-    /// Gets target where this eventhandler should be executed in.
-    /// </summary>
-    ThreadTarget ThreadTarget { get; }
+    Type Type { get; }
 
     /// <summary>
     /// Gets a value indicating whether the current object has been disposed.

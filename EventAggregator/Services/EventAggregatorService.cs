@@ -48,13 +48,12 @@ public class EventAggregatorService : IEventAggregator
     {
         Guard.IsNotNull(eventData);
 
-        IImmutableList<IInternalSubscription> handlerList;
+        IImmutableList<IInternalSubscription>? handlerList;
 
         _readerWriterLock.AcquireReaderLock(Timeout.Infinite);
         try
         {
-            if (_handlers.TryGetValue(eventData.GetType(), out handlerList) ==
-                false)
+            if (_handlers.TryGetValue(eventData.GetType(), out handlerList) == false)
             {
                 return eventData;
             }
@@ -66,7 +65,7 @@ public class EventAggregatorService : IEventAggregator
 
         foreach (var handler in handlerList)
         {
-            if (handler.IsDisposed || (handler.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
+            if (handler.IsDisposed || (handler.SubscriptionOptions.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
             {
                 continue;
             }
@@ -78,16 +77,12 @@ public class EventAggregatorService : IEventAggregator
     }
 
     /// <inheritdoc/>
-    public ISubscription Subscribe<T>(
-        IEventAggregator.EventHandlerDelegate<T> handler,
-        bool ignoreCancelled,
-        EventPriority eventPriority,
-        ThreadTarget threadTarget)
+    public ISubscription Subscribe<T>(IEventAggregator.EventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
         where T : class, IEvent
     {
         Guard.IsNotNull(handler);
 
-        var subscription = BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
+        var subscription = BuildSubscription(handler, subscriptionOptions);
 
         _readerWriterLock.AcquireWriterLock(Timeout.Infinite);
 
@@ -104,7 +99,7 @@ public class EventAggregatorService : IEventAggregator
             {
                 newHandlers = newHandlers
                     .Add(subscription)
-                    .OrderBy(x => x.Priority)
+                    .OrderBy(x => x.SubscriptionOptions.EventPriority)
                     .ToImmutableList();
             }
 
@@ -119,11 +114,7 @@ public class EventAggregatorService : IEventAggregator
     }
 
     /// <inheritdoc />
-    public ISubscription Subscribe<T>(
-        IEventAggregator.AsyncEventHandlerDelegate<T> handler,
-        bool ignoreCancelled = false,
-        EventPriority eventPriority = EventPriority.Normal,
-        ThreadTarget threadTarget = ThreadTarget.PublisherThread)
+    public ISubscription Subscribe<T>(IEventAggregator.AsyncEventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
         where T : class, IEvent
     {
         Guard.IsNotNull(handler);
@@ -140,7 +131,7 @@ public class EventAggregatorService : IEventAggregator
             }
         }
 
-        return Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
+        return Subscribe<T>(ExecuteSubscription, subscriptionOptions);
     }
 
     /// <inheritdoc/>
@@ -178,11 +169,7 @@ public class EventAggregatorService : IEventAggregator
     }
 
     [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = "We WANT to modify the variable before use.")]
-    private IInternalSubscription BuildSubscription<T>(
-        IEventAggregator.EventHandlerDelegate<T> handler,
-        bool ignoreCancelled,
-        EventPriority eventPriority,
-        ThreadTarget threadTarget)
+    private IInternalSubscription BuildSubscription<T>(IEventAggregator.EventHandlerDelegate<T> handler, SubscriptionOptions? subscriptionOptions = null)
         where T : class, IEvent
     {
         Guard.IsNotNull(handler);
@@ -192,9 +179,7 @@ public class EventAggregatorService : IEventAggregator
         subscription = new Subscription<T>(
             _subscriptionLogger,
             handler,
-            ignoreCancelled,
-            eventPriority,
-            threadTarget,
+            subscriptionOptions,
             _synchronizationContext,
             () =>
             {

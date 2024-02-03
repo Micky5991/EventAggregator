@@ -23,74 +23,44 @@ public class Subscription<T> : IInternalSubscription
 
     private readonly Action _unsubscribeAction;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Subscription{T}"/> class.
-    /// </summary>
-    /// <param name="logger">Logger that should receive.</param>
-    /// <param name="handler">Callback that should be called upon publish.</param>
-    /// <param name="ignoreCancelled">Ignore event subscription if event was cancelled before.</param>
-    /// <param name="eventPriority">Priority of this subscription.</param>
-    /// <param name="threadTarget">Selected Thread where this subscription should be executed.</param>
-    /// <param name="context">Context that will be needed for <paramref name="threadTarget"/> selections.</param>
-    /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="threadTarget"></paramref> is invalid.</exception>
-    public Subscription(
-        ILogger<ISubscription> logger,
-        IEventAggregator.EventHandlerDelegate<T> handler,
-        bool ignoreCancelled,
-        EventPriority eventPriority,
-        ThreadTarget threadTarget,
-        SynchronizationContext? context,
-        Action unsubscribeAction)
-    {
-        if (Enum.IsDefined(typeof(ThreadTarget), (int)threadTarget) == false)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(threadTarget),
-                threadTarget,
-                $"{nameof(threadTarget)} is not defined in {typeof(ThreadTarget)}");
-        }
-
-        if (Enum.IsDefined(typeof(EventPriority), (int)eventPriority) == false)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(eventPriority),
-                eventPriority,
-                $"{nameof(eventPriority)} is not defined in {typeof(EventPriority)}");
-        }
-
-        if (logger == null)
-        {
-            throw new ArgumentNullException(nameof(logger));
-        }
-
-        _logger = logger;
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _context = context;
-        _unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
-
-        IgnoreCancelled = ignoreCancelled;
-        Priority = eventPriority;
-        ThreadTarget = threadTarget;
-        Type = typeof(T);
-
-        ValidateSubscription();
-    }
-
     /// <inheritdoc/>
-    public bool IgnoreCancelled { get; }
-
-    /// <inheritdoc/>
-    public EventPriority Priority { get; }
-
-    /// <inheritdoc/>
-    public ThreadTarget ThreadTarget { get; }
+    public SubscriptionOptions SubscriptionOptions { get; }
 
     /// <inheritdoc/>
     public bool IsDisposed { get; private set; }
 
     /// <inheritdoc/>
     public Type Type { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Subscription{T}"/> class.
+    /// </summary>
+    /// <param name="logger">Logger that should receive.</param>
+    /// <param name="handler">Callback that should be called upon publish.</param>
+    /// <param name="subscriptionOptions">Options to configure the behavior of this specific subscription.</param>
+    /// <param name="context">Context that will be needed for specific thread selections in <paramref name="subscriptionOptions"/>.</param>
+    /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
+    public Subscription(
+        ILogger<ISubscription> logger,
+        IEventAggregator.EventHandlerDelegate<T> handler,
+        SubscriptionOptions? subscriptionOptions,
+        SynchronizationContext? context,
+        Action unsubscribeAction)
+    {
+        Guard.IsNotNull(logger);
+        Guard.IsNotNull(handler);
+        Guard.IsNotNull(unsubscribeAction);
+
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _context = context;
+        _unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
+
+        SubscriptionOptions = subscriptionOptions ?? new SubscriptionOptions();
+        Type = typeof(T);
+
+        ValidateSubscription();
+    }
 
     /// <summary>
     /// Calls the saved handler in a certain context.
@@ -112,7 +82,7 @@ public class Subscription<T> : IInternalSubscription
             throw new ArgumentException("Type of event is invalid.", nameof(eventInstance));
         }
 
-        switch (ThreadTarget)
+        switch (SubscriptionOptions.ThreadTarget)
         {
             case ThreadTarget.PublisherThread:
                 ExecuteSafely(instance);
@@ -178,13 +148,13 @@ public class Subscription<T> : IInternalSubscription
 
     private void ValidateSubscription()
     {
-        if (IsDataChaningEvent() && ThreadTarget != ThreadTarget.PublisherThread)
+        if (IsDataChaningEvent() && SubscriptionOptions.ThreadTarget != ThreadTarget.PublisherThread)
         {
             throw new
                 InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
         }
 
-        if (ThreadTarget == ThreadTarget.MainThread && _context == null)
+        if (SubscriptionOptions.ThreadTarget == ThreadTarget.MainThread && _context == null)
         {
             throw new
                 InvalidOperationException($"The {nameof(SynchronizationContext)} has to be set in order to use {nameof(ThreadTarget.MainThread)}");
