@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -52,6 +53,8 @@ public class EventAggregatorService : IEventAggregator
 
         activity?.SetTag(EventAggregatorDiagnostics.TagEventType, typeof(T).FullName);
 
+        EventAggregatorDiagnostics.PublishCount.Add(1, new KeyValuePair<string, object?>(EventAggregatorDiagnostics.TagEventType, typeof(T).FullName));
+
         IImmutableList<IInternalSubscription>? handlerList;
 
         _readerWriterLock.AcquireReaderLock(Timeout.Infinite);
@@ -67,6 +70,8 @@ public class EventAggregatorService : IEventAggregator
             _readerWriterLock.ReleaseReaderLock();
         }
 
+        var handleCount = 0;
+
         foreach (var handler in handlerList)
         {
             if (handler.IsDisposed || (handler.SubscriptionOptions.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
@@ -75,7 +80,11 @@ public class EventAggregatorService : IEventAggregator
             }
 
             handler.Invoke(eventData);
+
+            handleCount++;
         }
+
+        EventAggregatorDiagnostics.PublishHandlesCount.Add(handleCount, new KeyValuePair<string, object?>(EventAggregatorDiagnostics.TagEventType, typeof(T).FullName));
 
         return eventData;
     }
