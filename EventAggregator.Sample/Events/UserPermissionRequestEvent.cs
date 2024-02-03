@@ -6,8 +6,8 @@ public class UserPermissionRequestEvent : CancellableEventBase
 {
     public UserPermissionRequestEvent(string username, string role)
     {
-        this.Username = username;
-        this.Role = role;
+        Username = username;
+        Role = role;
     }
 
     public string Username { get; }

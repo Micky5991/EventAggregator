@@ -7,9 +7,9 @@ public class UserPurchaseItemEvent : EventBase, IDataChangingEvent
 {
     public UserPurchaseItemEvent(string username, int price, string? usedCoupon)
     {
-        this.Username = username;
-        this.Price = price;
-        this.UsedCoupon = usedCoupon;
+        Username = username;
+        Price = price;
+        UsedCoupon = usedCoupon;
     }
 
     public string Username { get; }

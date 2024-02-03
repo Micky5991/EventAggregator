@@ -11,7 +11,7 @@ public class EventBase : IEvent
     /// <inheritdoc/>
     public bool IsCancellable()
     {
-        return this.GetType()
+        return GetType()
             .GetInterfaces().Contains(typeof(ICancellableEvent));
     }
 }

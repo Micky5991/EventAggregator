@@ -6,8 +6,8 @@ public class NotificationEvent : EventBase
 {
     public NotificationEvent(int number)
     {
-            this.Number = number;
-        }
+        Number = number;
+    }
 
     public int Number { get; }
 }

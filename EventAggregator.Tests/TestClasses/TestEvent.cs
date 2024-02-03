@@ -8,11 +8,11 @@ public class TestEvent : EventBase
 
     public TestEvent()
     {
-        this.Number = 1234;
+        Number = 1234;
     }
 
     public TestEvent(int number) : this()
     {
-        this.Number = number;
+        Number = number;
     }
 }

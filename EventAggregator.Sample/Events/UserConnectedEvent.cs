@@ -6,7 +6,7 @@ public class UserConnectedEvent : EventBase
 {
     public UserConnectedEvent(string username)
     {
-        this.Username = username;
+        Username = username;
     }
 
     public string Username { get; }

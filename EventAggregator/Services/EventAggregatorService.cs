@@ -28,10 +28,10 @@ public class EventAggregatorService : IEventAggregator
     /// <param name="subscriptionLogger">Logger instance for the subscription that should be used.</param>
     public EventAggregatorService(ILogger<ISubscription> subscriptionLogger)
     {
-        this._subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
+        _subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
 
-        this._handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
-        this._readerWriterLock = new ReaderWriterLock();
+        _handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
+        _readerWriterLock = new ReaderWriterLock();
     }
 
     /// <inheritdoc />
@@ -39,7 +39,7 @@ public class EventAggregatorService : IEventAggregator
     {
         Guard.IsNotNull(context);
 
-        this._synchronizationContext = context ?? throw new ArgumentNullException(nameof(context));
+        _synchronizationContext = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     /// <inheritdoc/>
@@ -50,10 +50,10 @@ public class EventAggregatorService : IEventAggregator
 
         IImmutableList<IInternalSubscription> handlerList;
 
-        this._readerWriterLock.AcquireReaderLock(Timeout.Infinite);
+        _readerWriterLock.AcquireReaderLock(Timeout.Infinite);
         try
         {
-            if (this._handlers.TryGetValue(eventData.GetType(), out handlerList) ==
+            if (_handlers.TryGetValue(eventData.GetType(), out handlerList) ==
                 false)
             {
                 return eventData;
@@ -61,7 +61,7 @@ public class EventAggregatorService : IEventAggregator
         }
         finally
         {
-            this._readerWriterLock.ReleaseReaderLock();
+            _readerWriterLock.ReleaseReaderLock();
         }
 
         foreach (var handler in handlerList)
@@ -87,13 +87,13 @@ public class EventAggregatorService : IEventAggregator
     {
         Guard.IsNotNull(handler);
 
-        var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
+        var subscription = BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
 
-        this._readerWriterLock.AcquireWriterLock(Timeout.Infinite);
+        _readerWriterLock.AcquireWriterLock(Timeout.Infinite);
 
         try
         {
-            if (this._handlers.TryGetValue(typeof(T), out var newHandlers) == false)
+            if (_handlers.TryGetValue(typeof(T), out var newHandlers) == false)
             {
                 newHandlers = new List<IInternalSubscription>
                 {
@@ -108,11 +108,11 @@ public class EventAggregatorService : IEventAggregator
                     .ToImmutableList();
             }
 
-            this._handlers = this._handlers.SetItem(typeof(T), newHandlers);
+            _handlers = _handlers.SetItem(typeof(T), newHandlers);
         }
         finally
         {
-            this._readerWriterLock.ReleaseWriterLock();
+            _readerWriterLock.ReleaseWriterLock();
         }
 
         return subscription;
@@ -136,11 +136,11 @@ public class EventAggregatorService : IEventAggregator
             }
             catch (Exception e)
             {
-                this._subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
+                _subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
             }
         }
 
-        return this.Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
+        return Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
     }
 
     /// <inheritdoc/>
@@ -158,22 +158,22 @@ public class EventAggregatorService : IEventAggregator
             ThrowHelper.ThrowObjectDisposedException(nameof(subscription));
         }
 
-        this._readerWriterLock.AcquireWriterLock(Timeout.Infinite);
+        _readerWriterLock.AcquireWriterLock(Timeout.Infinite);
 
         try
         {
-            if (this._handlers.TryGetValue(subscription.Type, out var handlerList) == false)
+            if (_handlers.TryGetValue(subscription.Type, out var handlerList) == false)
             {
                 return;
             }
 
             handlerList = handlerList.Remove(subscription);
 
-            this._handlers = this._handlers.SetItem(subscription.Type, handlerList);
+            _handlers = _handlers.SetItem(subscription.Type, handlerList);
         }
         finally
         {
-            this._readerWriterLock.ReleaseWriterLock();
+            _readerWriterLock.ReleaseWriterLock();
         }
     }
 
@@ -190,12 +190,12 @@ public class EventAggregatorService : IEventAggregator
         IInternalSubscription? subscription = null;
 
         subscription = new Subscription<T>(
-            this._subscriptionLogger,
+            _subscriptionLogger,
             handler,
             ignoreCancelled,
             eventPriority,
             threadTarget,
-            this._synchronizationContext,
+            _synchronizationContext,
             () =>
             {
                 if (subscription == null)
@@ -204,7 +204,7 @@ public class EventAggregatorService : IEventAggregator
                         InvalidOperationException($"Failed to remove subscription from {nameof(IEventAggregator)}");
                 }
 
-                this.InternalUnsubscribe(subscription);
+                InternalUnsubscribe(subscription);
             });
 
         return subscription;

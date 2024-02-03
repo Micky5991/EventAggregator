@@ -6,8 +6,8 @@ public class UserSendMessageEvent : CancellableEventBase
 {
     public UserSendMessageEvent(string username, string message)
     {
-        this.Username = username;
-        this.Message = message;
+        Username = username;
+        Message = message;
     }
 
     public string Username { get; }

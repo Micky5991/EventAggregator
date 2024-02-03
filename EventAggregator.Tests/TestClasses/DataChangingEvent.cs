@@ -11,11 +11,11 @@ public class DataChangingEvent : EventBase, IDataChangingEvent
 
     public int Number
     {
-        get => this._number;
+        get => _number;
         set
         {
-            this.NumberChangeAmount++;
-            this._number = value;
+            NumberChangeAmount++;
+            _number = value;
         }
     }
 }

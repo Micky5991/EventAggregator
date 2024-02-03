@@ -8,7 +8,7 @@ public class TestSynchronizationContext : SynchronizationContext
     public int PostAmount { get; private set; } = 0;
     public int SendAmount { get; private set; } = 0;
 
-    public int InvokeAmount => this.PostAmount + this.SendAmount;
+    public int InvokeAmount => PostAmount + SendAmount;
 
     public override SynchronizationContext CreateCopy()
     {
@@ -17,11 +17,11 @@ public class TestSynchronizationContext : SynchronizationContext
 
     public override void Post(SendOrPostCallback d, object state)
     {
-        this.PostAmount++;
+        PostAmount++;
     }
 
     public override void Send(SendOrPostCallback d, object state)
     {
-        this.SendAmount++;
+        SendAmount++;
     }
 }
