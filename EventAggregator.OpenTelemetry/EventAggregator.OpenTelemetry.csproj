@@ -6,6 +6,19 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Micky5991.EventAggregator.OpenTelemetry</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator.OpenTelemetry</RootNamespace>
+        <LangVersion>12</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>EventAggregator OpenTelemetry Extension</Title>
+        <Authors>Micky5991</Authors>
+        <Description>Adds extensions to register the EventAggregator as a OpenTelemetry service.</Description>
+        <PackageProjectUrl>https://github.com/Micky5991/EventAggregator</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <Copyright>2024 Micky5991</Copyright>
+        <WarningsAsErrors>true</WarningsAsErrors>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +27,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\EventAggregator\EventAggregator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>

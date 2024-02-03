@@ -12,7 +12,7 @@
         <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
-        <Copyright>2022 Micky5991</Copyright>
+        <Copyright>2024 Micky5991</Copyright>
         <Nullable>enable</Nullable>
         <WarningsAsErrors>true</WarningsAsErrors>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
