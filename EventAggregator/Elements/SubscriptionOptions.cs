@@ -1,13 +1,21 @@
+using Micky5991.EventAggregator.Interfaces;
+
 namespace Micky5991.EventAggregator.Elements;
 
 public class SubscriptionOptions
 {
-
-    /// <param name="ignoreCancelled">When the type <typeparamref name="T"/> implements <see cref="ICancellableEvent"/> and a lower priority cancels the event, this handler wont be invoked.</param>
-    /// <param name="eventPriority">Defines a priority that orders handler execution from low to high.</param>
-    /// <param name="threadTarget">Target thread that this event should be executed in.</param>
-
+    /// <summary>
+    /// Gets a value indicating when the eventtype implements <see cref="ICancellableEvent"/> and a lower priority handler cancels the event, this handler won't be invoked.
+    /// </summary>
     public bool IgnoreCancelled { get; set; } = false;
+
+    /// <summary>
+    /// Gets the priority that orders handler execution from low to high.
+    /// </summary>
     public EventPriority EventPriority { get; set; } = EventPriority.Normal;
+
+    /// <summary>
+    /// Gets the target thread where this event should be executed in.
+    /// </summary>
     public ThreadTarget ThreadTarget { get; set; } = ThreadTarget.PublisherThread;
 }
