@@ -9,205 +9,204 @@ using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Micky5991.EventAggregator.Services
+namespace Micky5991.EventAggregator.Services;
+
+/// <inheritdoc cref="IEventAggregator"/>
+public class EventAggregatorService : IEventAggregator
 {
-    /// <inheritdoc cref="IEventAggregator"/>
-    public class EventAggregatorService : IEventAggregator
+    private readonly ILogger<ISubscription> subscriptionLogger;
+
+    private readonly ReaderWriterLock readerWriterLock;
+
+    private SynchronizationContext? synchronizationContext;
+
+    private IImmutableDictionary<Type, IImmutableList<IInternalSubscription>> handlers;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventAggregatorService"/> class.
+    /// </summary>
+    /// <param name="subscriptionLogger">Logger instance for the subscription that should be used.</param>
+    public EventAggregatorService(ILogger<ISubscription> subscriptionLogger)
     {
-        private readonly ILogger<ISubscription> subscriptionLogger;
+        this.subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
 
-        private readonly ReaderWriterLock readerWriterLock;
+        this.handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
+        this.readerWriterLock = new ReaderWriterLock();
+    }
 
-        private SynchronizationContext? synchronizationContext;
+    /// <inheritdoc />
+    public void SetMainThreadSynchronizationContext(SynchronizationContext context)
+    {
+        Guard.IsNotNull(context);
 
-        private IImmutableDictionary<Type, IImmutableList<IInternalSubscription>> handlers;
+        this.synchronizationContext = context ?? throw new ArgumentNullException(nameof(context));
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventAggregatorService"/> class.
-        /// </summary>
-        /// <param name="subscriptionLogger">Logger instance for the subscription that should be used.</param>
-        public EventAggregatorService(ILogger<ISubscription> subscriptionLogger)
+    /// <inheritdoc/>
+    public T Publish<T>(T eventData)
+        where T : class, IEvent
+    {
+        Guard.IsNotNull(eventData);
+
+        IImmutableList<IInternalSubscription> handlerList;
+
+        this.readerWriterLock.AcquireReaderLock(Timeout.Infinite);
+        try
         {
-            this.subscriptionLogger = subscriptionLogger ?? throw new ArgumentNullException(nameof(subscriptionLogger));
-
-            this.handlers = new Dictionary<Type, IImmutableList<IInternalSubscription>>().ToImmutableDictionary();
-            this.readerWriterLock = new ReaderWriterLock();
+            if (this.handlers.TryGetValue(eventData.GetType(), out handlerList) ==
+                false)
+            {
+                return eventData;
+            }
+        }
+        finally
+        {
+            this.readerWriterLock.ReleaseReaderLock();
         }
 
-        /// <inheritdoc />
-        public void SetMainThreadSynchronizationContext(SynchronizationContext context)
+        foreach (var handler in handlerList)
         {
-            Guard.IsNotNull(context);
+            if (handler.IsDisposed || (handler.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
+            {
+                continue;
+            }
 
-            this.synchronizationContext = context ?? throw new ArgumentNullException(nameof(context));
+            handler.Invoke(eventData);
         }
 
-        /// <inheritdoc/>
-        public T Publish<T>(T eventData)
-            where T : class, IEvent
+        return eventData;
+    }
+
+    /// <inheritdoc/>
+    public ISubscription Subscribe<T>(
+        IEventAggregator.EventHandlerDelegate<T> handler,
+        bool ignoreCancelled,
+        EventPriority eventPriority,
+        ThreadTarget threadTarget)
+        where T : class, IEvent
+    {
+        Guard.IsNotNull(handler);
+
+        var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
+
+        this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
+
+        try
         {
-            Guard.IsNotNull(eventData);
+            if (this.handlers.TryGetValue(typeof(T), out var newHandlers) == false)
+            {
+                newHandlers = new List<IInternalSubscription>
+                {
+                    subscription,
+                }.ToImmutableList();
+            }
+            else
+            {
+                newHandlers = newHandlers
+                    .Add(subscription)
+                    .OrderBy(x => x.Priority)
+                    .ToImmutableList();
+            }
 
-            IImmutableList<IInternalSubscription> handlerList;
+            this.handlers = this.handlers.SetItem(typeof(T), newHandlers);
+        }
+        finally
+        {
+            this.readerWriterLock.ReleaseWriterLock();
+        }
 
-            this.readerWriterLock.AcquireReaderLock(Timeout.Infinite);
+        return subscription;
+    }
+
+    /// <inheritdoc />
+    public ISubscription Subscribe<T>(
+        IEventAggregator.AsyncEventHandlerDelegate<T> handler,
+        bool ignoreCancelled = false,
+        EventPriority eventPriority = EventPriority.Normal,
+        ThreadTarget threadTarget = ThreadTarget.PublisherThread)
+        where T : class, IEvent
+    {
+        Guard.IsNotNull(handler);
+
+        async void ExecuteSubscription(T eventData)
+        {
             try
             {
-                if (this.handlers.TryGetValue(eventData.GetType(), out handlerList) ==
-                    false)
-                {
-                    return eventData;
-                }
+                await handler(eventData);
             }
-            finally
+            catch (Exception e)
             {
-                this.readerWriterLock.ReleaseReaderLock();
+                this.subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
             }
-
-            foreach (var handler in handlerList)
-            {
-                if (handler.IsDisposed || (handler.IgnoreCancelled && eventData is ICancellableEvent { Cancelled: true }))
-                {
-                    continue;
-                }
-
-                handler.Invoke(eventData);
-            }
-
-            return eventData;
         }
 
-        /// <inheritdoc/>
-        public ISubscription Subscribe<T>(
-            IEventAggregator.EventHandlerDelegate<T> handler,
-            bool ignoreCancelled,
-            EventPriority eventPriority,
-            ThreadTarget threadTarget)
-            where T : class, IEvent
+        return this.Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
+    }
+
+    /// <inheritdoc/>
+    public void Unsubscribe(ISubscription subscription)
+    {
+        Guard.IsNotNull(subscription);
+
+        subscription.Dispose();
+    }
+
+    private void InternalUnsubscribe(IInternalSubscription subscription)
+    {
+        if (subscription.IsDisposed)
         {
-            Guard.IsNotNull(handler);
-
-            var subscription = this.BuildSubscription(handler, ignoreCancelled, eventPriority, threadTarget);
-
-            this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
-
-            try
-            {
-                if (this.handlers.TryGetValue(typeof(T), out var newHandlers) == false)
-                {
-                    newHandlers = new List<IInternalSubscription>
-                    {
-                        subscription,
-                    }.ToImmutableList();
-                }
-                else
-                {
-                    newHandlers = newHandlers
-                                  .Add(subscription)
-                                  .OrderBy(x => x.Priority)
-                                  .ToImmutableList();
-                }
-
-                this.handlers = this.handlers.SetItem(typeof(T), newHandlers);
-            }
-            finally
-            {
-                this.readerWriterLock.ReleaseWriterLock();
-            }
-
-            return subscription;
+            ThrowHelper.ThrowObjectDisposedException(nameof(subscription));
         }
 
-        /// <inheritdoc />
-        public ISubscription Subscribe<T>(
-            IEventAggregator.AsyncEventHandlerDelegate<T> handler,
-            bool ignoreCancelled = false,
-            EventPriority eventPriority = EventPriority.Normal,
-            ThreadTarget threadTarget = ThreadTarget.PublisherThread)
-            where T : class, IEvent
+        this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
+
+        try
         {
-            Guard.IsNotNull(handler);
-
-            async void ExecuteSubscription(T eventData)
+            if (this.handlers.TryGetValue(subscription.Type, out var handlerList) == false)
             {
-                try
-                {
-                    await handler(eventData);
-                }
-                catch (Exception e)
-                {
-                    this.subscriptionLogger.LogError(e, "An error occured during async handler of {Event}", typeof(T));
-                }
+                return;
             }
 
-            return this.Subscribe<T>(ExecuteSubscription, ignoreCancelled, eventPriority, threadTarget);
-        }
+            handlerList = handlerList.Remove(subscription);
 
-        /// <inheritdoc/>
-        public void Unsubscribe(ISubscription subscription)
+            this.handlers = this.handlers.SetItem(subscription.Type, handlerList);
+        }
+        finally
         {
-            Guard.IsNotNull(subscription);
-
-            subscription.Dispose();
+            this.readerWriterLock.ReleaseWriterLock();
         }
+    }
 
-        private void InternalUnsubscribe(IInternalSubscription subscription)
-        {
-            if (subscription.IsDisposed)
+    [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = "We WANT to modify the variable before use.")]
+    private IInternalSubscription BuildSubscription<T>(
+        IEventAggregator.EventHandlerDelegate<T> handler,
+        bool ignoreCancelled,
+        EventPriority eventPriority,
+        ThreadTarget threadTarget)
+        where T : class, IEvent
+    {
+        Guard.IsNotNull(handler);
+
+        IInternalSubscription? subscription = null;
+
+        subscription = new Subscription<T>(
+            this.subscriptionLogger,
+            handler,
+            ignoreCancelled,
+            eventPriority,
+            threadTarget,
+            this.synchronizationContext,
+            () =>
             {
-                ThrowHelper.ThrowObjectDisposedException(nameof(subscription));
-            }
-
-            this.readerWriterLock.AcquireWriterLock(Timeout.Infinite);
-
-            try
-            {
-                if (this.handlers.TryGetValue(subscription.Type, out var handlerList) == false)
+                if (subscription == null)
                 {
-                    return;
+                    throw new
+                        InvalidOperationException($"Failed to remove subscription from {nameof(IEventAggregator)}");
                 }
 
-                handlerList = handlerList.Remove(subscription);
+                this.InternalUnsubscribe(subscription);
+            });
 
-                this.handlers = this.handlers.SetItem(subscription.Type, handlerList);
-            }
-            finally
-            {
-                this.readerWriterLock.ReleaseWriterLock();
-            }
-        }
-
-        [SuppressMessage("ReSharper", "AccessToModifiedClosure", Justification = "We WANT to modify the variable before use.")]
-        private IInternalSubscription BuildSubscription<T>(
-            IEventAggregator.EventHandlerDelegate<T> handler,
-            bool ignoreCancelled,
-            EventPriority eventPriority,
-            ThreadTarget threadTarget)
-            where T : class, IEvent
-        {
-            Guard.IsNotNull(handler);
-
-            IInternalSubscription? subscription = null;
-
-            subscription = new Subscription<T>(
-                                               this.subscriptionLogger,
-                                               handler,
-                                               ignoreCancelled,
-                                               eventPriority,
-                                               threadTarget,
-                                               this.synchronizationContext,
-                                               () =>
-                                               {
-                                                   if (subscription == null)
-                                                   {
-                                                       throw new
-                                                           InvalidOperationException($"Failed to remove subscription from {nameof(IEventAggregator)}");
-                                                   }
-
-                                                   this.InternalUnsubscribe(subscription);
-                                               });
-
-            return subscription;
-        }
+        return subscription;
     }
 }

@@ -5,12 +5,12 @@ using Micky5991.EventAggregator.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Micky5991.EventAggregator.Sample
+namespace Micky5991.EventAggregator.Sample;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static async Task Main(string[] args)
-        {
             var serviceProvider = new ServiceCollection()
                                   .AddLogging(x => x.AddConsole())
                                   .AddSingleton<IEventAggregator, EventAggregatorService>()
@@ -44,5 +44,4 @@ namespace Micky5991.EventAggregator.Sample
 
             await Task.Delay(10000);
         }
-    }
 }

@@ -4,22 +4,22 @@ using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Sample.Events;
 using Microsoft.Extensions.Logging;
 
-namespace Micky5991.EventAggregator.Sample
+namespace Micky5991.EventAggregator.Sample;
+
+public class SampleService
 {
-    public class SampleService
+    private readonly IEventAggregator eventAggregator;
+
+    private readonly ILogger<SampleService> logger;
+
+    public SampleService(IEventAggregator eventAggregator, ILogger<SampleService> logger)
     {
-        private readonly IEventAggregator eventAggregator;
-
-        private readonly ILogger<SampleService> logger;
-
-        public SampleService(IEventAggregator eventAggregator, ILogger<SampleService> logger)
-        {
             this.eventAggregator = eventAggregator;
             this.logger = logger;
         }
 
-        public void Initialize()
-        {
+    public void Initialize()
+    {
             this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnected);
             this.eventAggregator.Subscribe<UserConnectedEvent>(this.OnUserConnectedAsync);
             this.eventAggregator.Subscribe<UserSendMessageEvent>(this.OnGuestSendsMessage);
@@ -29,8 +29,8 @@ namespace Micky5991.EventAggregator.Sample
             this.eventAggregator.Subscribe<UserPermissionRequestEvent>(this.OnSpecialUserPermissionRequest, eventPriority: EventPriority.Highest);
         }
 
-        private async Task OnUserConnectedAsync(UserConnectedEvent eventdata)
-        {
+    private async Task OnUserConnectedAsync(UserConnectedEvent eventdata)
+    {
             await Task.Delay(1000);
 
             this.logger.LogInformation("{Username} CONNECTED", eventdata.Username);
@@ -38,29 +38,29 @@ namespace Micky5991.EventAggregator.Sample
             throw new Exception("ERROR");
         }
 
-        private void OnPermissionRequest(UserPermissionRequestEvent eventdata)
-        {
+    private void OnPermissionRequest(UserPermissionRequestEvent eventdata)
+    {
             eventdata.Cancelled = true;
         }
 
-        private void OnModeratorPermissionRequest(UserPermissionRequestEvent eventdata)
-        {
+    private void OnModeratorPermissionRequest(UserPermissionRequestEvent eventdata)
+    {
             if (eventdata.Role == "Admin")
             {
                 eventdata.Cancelled = false;
             }
         }
 
-        private void OnSpecialUserPermissionRequest(UserPermissionRequestEvent eventdata)
-        {
+    private void OnSpecialUserPermissionRequest(UserPermissionRequestEvent eventdata)
+    {
             if (eventdata.Username == "Micky5991")
             {
                 eventdata.Cancelled = false;
             }
         }
 
-        public void SendMessage(string username, string message)
-        {
+    public void SendMessage(string username, string message)
+    {
             var messageEvent = this.eventAggregator.Publish(new UserSendMessageEvent(username, message));
             if (messageEvent.Cancelled == false)
             {
@@ -68,8 +68,8 @@ namespace Micky5991.EventAggregator.Sample
             }
         }
 
-        public void PurchaseItem(string username, int price, string? usedCoupon = null)
-        {
+    public void PurchaseItem(string username, int price, string? usedCoupon = null)
+    {
             var purchasedEvent = this.eventAggregator.Publish(new UserPurchaseItemEvent(username, price, usedCoupon));
 
             this.logger.LogInformation(
@@ -79,32 +79,31 @@ namespace Micky5991.EventAggregator.Sample
                                        purchasedEvent.Price);
         }
 
-        public bool HasPermission(string username, string role)
-        {
+    public bool HasPermission(string username, string role)
+    {
             var permissionRequest = this.eventAggregator.Publish(new UserPermissionRequestEvent(username, role));
 
             return permissionRequest.Cancelled == false;
         }
 
-        private void OnUserConnected(UserConnectedEvent eventData)
-        {
+    private void OnUserConnected(UserConnectedEvent eventData)
+    {
             this.logger.LogInformation("User \"{Username}\" connected", eventData.Username);
         }
 
-        private void OnUserPurchasedItem(UserPurchaseItemEvent eventData)
-        {
+    private void OnUserPurchasedItem(UserPurchaseItemEvent eventData)
+    {
             if (eventData.UsedCoupon == "10OFF")
             {
                 eventData.Price = (int) Math.Ceiling(eventData.Price * 0.9);
             }
         }
 
-        private void OnGuestSendsMessage(UserSendMessageEvent eventData)
-        {
+    private void OnGuestSendsMessage(UserSendMessageEvent eventData)
+    {
             if (eventData.Username == "Guest")
             {
                 eventData.Cancelled = true;
             }
         }
-    }
 }
