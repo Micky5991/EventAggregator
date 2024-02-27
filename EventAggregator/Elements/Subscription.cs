@@ -134,7 +134,7 @@ public class Subscription<T> : IInternalSubscription
         IsDisposed = true;
     }
 
-    private bool IsDataChaningEvent()
+    private bool IsDataChangingEvent()
     {
         return Type.GetInterfaces().Contains(typeof(IDataChangingEvent));
     }
@@ -154,7 +154,7 @@ public class Subscription<T> : IInternalSubscription
 
     private void ValidateSubscription()
     {
-        if (IsDataChaningEvent() && SubscriptionOptions.ThreadTarget != ThreadTarget.PublisherThread)
+        if (IsDataChangingEvent() && SubscriptionOptions.ThreadTarget != ThreadTarget.PublisherThread)
         {
             throw new InvalidOperationException($"This event implements {typeof(IDataChangingEvent)} and needs to run in the publishers thread to work.");
         }
