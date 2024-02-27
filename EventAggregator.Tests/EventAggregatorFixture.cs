@@ -112,14 +112,12 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventWithUnknownEventPriorityThrowsException()
     {
-        var options = new SubscriptionOptions
+        Action act = () => _eventAggregator.Subscribe<TestEvent>(e => { }, new SubscriptionOptions
         {
             IgnoreCancelled = false,
             EventPriority = (EventPriority) int.MaxValue,
             ThreadTarget = ThreadTarget.PublisherThread,
-        };
-
-        Action act = () => _eventAggregator.Subscribe<TestEvent>(e => { }, options);
+        });
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -127,14 +125,12 @@ public class EventAggregatorFixture
     [TestMethod]
     public void SubscribeEventWithUnknownThreadTargetThrowsException()
     {
-        var options = new SubscriptionOptions
+        Action act = () => _eventAggregator.Subscribe<TestEvent>(e => { }, new SubscriptionOptions
         {
             IgnoreCancelled = false,
             EventPriority = EventPriority.Normal,
             ThreadTarget = (ThreadTarget) int.MaxValue,
-        };
-
-        Action act = () => _eventAggregator.Subscribe<TestEvent>(e => { }, options);
+        });
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }

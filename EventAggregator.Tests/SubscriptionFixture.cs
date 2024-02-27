@@ -303,17 +303,15 @@ public class SubscriptionFixture
     [TestMethod]
     public void CreatingSubscriptionWithInvalidThreadTargetThrowsException()
     {
-        var options = new SubscriptionOptions
-        {
-            IgnoreCancelled = false,
-            EventPriority = EventPriority.Normal,
-            ThreadTarget = (ThreadTarget) int.MaxValue,
-        };
-
         Action act = () => new Subscription<TestEvent>(
             _logger,
             e => { },
-            options,
+            new SubscriptionOptions
+            {
+                IgnoreCancelled = false,
+                EventPriority = EventPriority.Normal,
+                ThreadTarget = (ThreadTarget) int.MaxValue,
+            },
             _synchronizationContext,
             () => { });
 
