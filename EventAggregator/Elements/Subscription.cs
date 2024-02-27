@@ -37,13 +37,13 @@ public class Subscription<T> : IInternalSubscription
     /// </summary>
     /// <param name="logger">Logger that should receive.</param>
     /// <param name="handler">Callback that should be called upon publish.</param>
-    /// <param name="subscriptionOptions">Options to configure the behavior of this specific subscription.</param>
-    /// <param name="context">Context that will be needed for specific thread selections in <paramref name="subscriptionOptions"/>.</param>
+    /// <param name="options">Options to configure the behavior of this specific subscription.</param>
+    /// <param name="context">Context that will be needed for specific thread selections in <paramref name="options"/>.</param>
     /// <param name="unsubscribeAction">Action that will be called when this subscription should not be called anymore.</param>
     public Subscription(
         ILogger<ISubscription> logger,
         IEventAggregator.EventHandlerDelegate<T> handler,
-        SubscriptionOptions? subscriptionOptions,
+        SubscriptionOptions? options,
         SynchronizationContext? context,
         Action unsubscribeAction)
     {
@@ -51,12 +51,25 @@ public class Subscription<T> : IInternalSubscription
         Guard.IsNotNull(handler);
         Guard.IsNotNull(unsubscribeAction);
 
+        if (options != null)
+        {
+            if (Enum.IsDefined(typeof(EventPriority), options.EventPriority) == false)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options), options.EventPriority, $"{nameof(options.EventPriority)} is not defined in {typeof(EventPriority)}");
+            }
+
+            if (Enum.IsDefined(typeof(ThreadTarget), options.ThreadTarget) == false)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options), options.ThreadTarget, $"{nameof(options.ThreadTarget)} is not defined in {typeof(ThreadTarget)}");
+            }
+        }
+
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
         _context = context;
         _unsubscribeAction = unsubscribeAction ?? throw new ArgumentNullException(nameof(unsubscribeAction));
 
-        SubscriptionOptions = subscriptionOptions ?? new SubscriptionOptions();
+        SubscriptionOptions = options ?? new SubscriptionOptions();
 
         Type = typeof(T);
 
