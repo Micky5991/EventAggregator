@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using CommunityToolkit.Diagnostics;
 using Micky5991.EventAggregator.Elements;
@@ -93,6 +94,7 @@ public class EventAggregatorService : IEventAggregator
         where T : class, IEvent
     {
         Guard.IsNotNull(handler);
+        ValidateSubscriptionOptions(subscriptionOptions);
 
         var subscription = BuildSubscription(handler, subscriptionOptions);
 
@@ -134,6 +136,8 @@ public class EventAggregatorService : IEventAggregator
 
         configureSubscription(options);
 
+        ValidateSubscriptionOptions(options);
+
         return Subscribe(handler, options);
     }
 
@@ -142,6 +146,7 @@ public class EventAggregatorService : IEventAggregator
         where T : class, IEvent
     {
         Guard.IsNotNull(handler);
+        ValidateSubscriptionOptions(subscriptionOptions);
 
         async void ExecuteSubscription(T eventData)
         {
@@ -166,6 +171,8 @@ public class EventAggregatorService : IEventAggregator
         var options = new SubscriptionOptions();
 
         configureSubscription(options);
+
+        ValidateSubscriptionOptions(options);
 
         return Subscribe(handler, options);
     }
@@ -201,6 +208,24 @@ public class EventAggregatorService : IEventAggregator
         finally
         {
             _readerWriterLock.ReleaseWriterLock();
+        }
+    }
+
+    private void ValidateSubscriptionOptions(SubscriptionOptions? options, [CallerArgumentExpression(nameof(options))] string? argument = null)
+    {
+        if (options == null)
+        {
+            return;
+        }
+
+        if (Enum.IsDefined(typeof(EventPriority), options.EventPriority) == false)
+        {
+            throw new ArgumentOutOfRangeException(argument, options.EventPriority, $"{nameof(options.EventPriority)} is not defined in {typeof(EventPriority)}");
+        }
+
+        if (Enum.IsDefined(typeof(ThreadTarget), options.ThreadTarget) == false)
+        {
+            throw new ArgumentOutOfRangeException(argument, options.ThreadTarget, $"{nameof(options.ThreadTarget)} is not defined in {typeof(ThreadTarget)}");
         }
     }
 
