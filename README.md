@@ -10,7 +10,7 @@ This library implements a variation of the eventaggregator pattern.
 
 ## NuGet Package
 
-This library is also available as .NET 9.0 library from [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
+This library is also available as .NET 8.0 / .NET 9.0 library from [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
 
 ```
 PM> Install-Package Micky5991.EventAggregator
@@ -20,7 +20,7 @@ PM> Install-Package Micky5991.EventAggregator
 
 ### Requirements
 
-- .NET 9
+- .NET 8 / .NET 9
 - [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 9.0+
 - [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 9.0+
 - [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 9.0+
