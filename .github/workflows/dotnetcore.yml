@@ -43,12 +43,11 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Setup .NET versions
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          6.0.x
-          7.0.x
           8.0.x
+          9.0.x
 
     - name: Install dependencies
       run: dotnet restore
@@ -78,29 +77,20 @@ jobs:
 
     steps:
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: nuget-package
           path: artifacts/
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: V${{ github.ref }}
+          name: V${{ github.ref }}
           draft: true
           prerelease: false
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
-          asset_name: Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
-          asset_content_type: application/zip
+          files: |
+            artifacts/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
