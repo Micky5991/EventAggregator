@@ -88,8 +88,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          name: V${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
+          name: V${{ github.ref_name }}
           draft: true
           prerelease: false
           files: |
