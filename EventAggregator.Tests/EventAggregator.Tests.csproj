@@ -3,9 +3,9 @@
     <PropertyGroup>
 
         <IsPackable>false</IsPackable>
-        <LangVersion>12</LangVersion>
+        <LangVersion>13</LangVersion>
 
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
 
         <AssemblyName>Micky5991.EventAggregator.Tests</AssemblyName>
 
@@ -13,15 +13,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="6.12.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-        <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
-        <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
-        <PackageReference Include="coverlet.collector" Version="6.0.0">
+        <PackageReference Include="FluentAssertions" Version="6.12.2" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
+        <PackageReference Include="coverlet.collector" Version="6.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="NSubstitute" Version="5.1.0" />
+        <PackageReference Include="NSubstitute" Version="5.3.0" />
     </ItemGroup>
 
     <ItemGroup>

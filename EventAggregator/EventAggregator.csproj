@@ -3,7 +3,6 @@
     <PropertyGroup>
         <AssemblyName>Micky5991.EventAggregator</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator</RootNamespace>
-        <LangVersion>12</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>EventAggregator</Title>
         <Authors>Micky5991</Authors>
@@ -15,15 +14,16 @@
         <Copyright>2024 Micky5991</Copyright>
         <Nullable>enable</Nullable>
         <WarningsAsErrors>true</WarningsAsErrors>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <LangVersion>13</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-      <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+      <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.3.2" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+      <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>

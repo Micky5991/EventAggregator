@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>Micky5991.EventAggregator.OpenTelemetry</AssemblyName>
         <RootNamespace>Micky5991.EventAggregator.OpenTelemetry</RootNamespace>
-        <LangVersion>12</LangVersion>
+        <LangVersion>13</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>EventAggregator OpenTelemetry Extension</Title>
         <Authors>Micky5991</Authors>
@@ -17,12 +16,12 @@
         <RepositoryType>git</RepositoryType>
         <Copyright>2024 Micky5991</Copyright>
         <WarningsAsErrors>true</WarningsAsErrors>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OpenTelemetry" Version="1.7.0" />
+      <PackageReference Include="OpenTelemetry" Version="1.10.0" />
     </ItemGroup>
 
     <ItemGroup>
