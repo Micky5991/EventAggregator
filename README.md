@@ -1,74 +1,160 @@
 # EventAggregator
 
-This library implements a variation of the eventaggregator pattern. 
+This library implements a variation of the [Event Aggregator](https://martinfowler.com/eaaDev/EventAggregator.html) pattern to provide a type-safe way for components to communicate without direct dependencies.
 
 ### Features
 
-- Event cancelling
-- Subscription priorites
-- Dispatching in specified threads
+- **Type-safe events**: Subscribe and publish events using strongly-typed classes.
+- **Event cancelling**: Prevent further execution of handlers or signal the publisher to abort.
+- **Data changing**: Modify event data that is then passed back to the publisher.
+- **Subscription priorities**: Control the order in which handlers are executed.
+- **Thread targets**: Dispatch handlers in the publisher's thread, a background thread, or the UI/Main thread.
+- **Asynchronous handlers**: Support for async handlers (fire-and-forget style).
 
 ## NuGet Package
 
-This library is also available as .NET 8.0 / .NET 9.0 library from [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
+This library is available for .NET 8.0, .NET 9.0, and .NET 10.0 on [NuGet](https://www.nuget.org/packages/Micky5991.EventAggregator).
 
-```
-PM> Install-Package Micky5991.EventAggregator
+```powershell
+dotnet add package Micky5991.EventAggregator
 ```
 
 ## Getting Started
 
 ### Requirements
 
-- .NET 8 / .NET 9
-- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 9.0+
-- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 9.0+
-- [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) 9.0+
+- .NET 8 / .NET 9 / .NET 10
+- [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) 8.0+
+- [Microsoft.Extensions.Logging.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/) 8.0+
 
 ### Registration
 
-In order to use this library, you need to first register the `IEventAggregator` to your `IServiceCollection`.
+Register the `IEventAggregator` to your `IServiceCollection`:
 
 ```cs
-return new ServiceCollection()
-
-    .AddSingleton<IEventAggregator, EventAggregatorService>() // Add this line to your registration chain...
-    .AddScoped<IEventAggregator, EventAggregatorService>() // ... or this one if you want to scope it
-
-    .BuildServiceProvider();
+services.AddSingleton<IEventAggregator, EventAggregatorService>();
 ```
 
-## Create your first event
+## Usage
 
-All have to implement the interface [`Micky5991.EventAggregator.Interfaces.IEvent`](EventAggregator/Interfaces/IEvent.cs). 
+### 1. Create an Event
 
-### Simple events
+All events must implement [`IEvent`](EventAggregator/Interfaces/IEvent.cs). Usually, you should inherit from [`EventBase`](EventAggregator/Elements/EventBase.cs).
 
-To create your first event you just have to inherit from the abstract class [`Micky5991.EventAggregator.Elements.EventBase`](EventAggregator/Elements/EventBase.cs).
+```cs
+public class UserLoggedInEvent : EventBase
+{
+    public string Username { get; }
 
-### Data changing events
+    public UserLoggedInEvent(string username)
+    {
+        Username = username;
+    }
+}
+```
 
-Data changing events implement the interface [`Micky5991.EventAggregator.Interfaces.IDataChangingEvent`](EventAggregator/Interfaces/IDataChangingEvent.cs) and prevent any subscribers to subscribe from other ThreadTargets than PublishersThread.
+### 2. Subscribe to an Event
 
-### Cancellable events
+Inject `IEventAggregator` and subscribe to your event.
 
-Cancellable events implement [`Micky5991.EventAggregator.Interfaces.ICancellableEvent`](EventAggregator/Interfaces/ICancellableEvent.cs) which enable cancellation for other handlers and to react after the publish by the publisher.
+```cs
+// Simple subscription
+var subscription = eventAggregator.Subscribe<UserLoggedInEvent>(e => 
+{
+    Console.WriteLine($"User {e.Username} logged in!");
+});
 
-All rules from the [data changing events](#data-changing-events) also apply.
+// Subscription with options
+eventAggregator.Subscribe<UserLoggedInEvent>(OnUserLoggedIn, options => 
+{
+    options.EventPriority = EventPriority.High;
+    options.ThreadTarget = ThreadTarget.BackgroundThread;
+});
 
-To create cancellable event you just have to inherit from the abstract class [`Micky5991.EventAggregator.Elements.CancellableEventBase`](EventAggregator/Elements/EventBase.cs).
+// Async handler (fire-and-forget)
+eventAggregator.Subscribe<UserLoggedInEvent>(async e => 
+{
+    await Task.Delay(100);
+    Console.WriteLine("Processed async");
+});
+
+// Remember to unsubscribe when needed
+subscription.Dispose();
+// OR
+eventAggregator.Unsubscribe(subscription);
+```
+
+### 3. Publish an Event
+
+```cs
+var eventData = new UserLoggedInEvent("Micky5991");
+
+eventAggregator.Publish(eventData);
+```
+
+## Advanced Features
+
+### Subscription Priorities
+
+Use `EventPriority` to control the execution order (from `Lowest` to `Highest`, then `Monitor`).
+
+```cs
+options.EventPriority = EventPriority.Highest;
+```
+
+### Thread Targets
+
+| Target | Description |
+|---|---|
+| `PublisherThread` | (Default) Executes in the same thread as `Publish`. Required for `IDataChangingEvent` and `ICancellableEvent`. |
+| `BackgroundThread` | Executes in a `ThreadPool` thread. |
+| `MainThread` | Executes in the captured `SynchronizationContext`. |
+
+To use `ThreadTarget.MainThread`, you must first set the context (e.g., in a UI application):
+
+```cs
+eventAggregator.SetMainThreadSynchronizationContext(SynchronizationContext.Current);
+```
+
+### Cancellable Events
+
+Inherit from [`CancellableEventBase`](EventAggregator/Elements/CancellableEventBase.cs) to allow handlers to cancel the event.
+
+```cs
+public class FileUploadEvent : CancellableEventBase { ... }
+
+// Subscriber
+eventAggregator.Subscribe<FileUploadEvent>(e => 
+{
+    if (e.FileSize > 100) e.Cancelled = true;
+});
+
+// Publisher
+var e = eventAggregator.Publish(new FileUploadEvent(file));
+if (e.Cancelled) { /* Abort upload */ }
+```
+
+### Data Changing Events
+
+Implement [`IDataChangingEvent`](EventAggregator/Interfaces/IDataChangingEvent.cs) for events where handlers are expected to modify data.
+
+```cs
+public class PriceCalculationEvent : EventBase, IDataChangingEvent 
+{
+    public double Price { get; set; }
+}
+```
 
 ## Example
 
-You can find a sample project in [here](EventAggregator/EventAggregator.Sample/).
-
+Check the [Sample project](EventAggregator.Sample/) for more detailed examples.
 
 ## License
 
 ```
 MIT License
 
-Copyright (c) 2022-2024 Micky5991
+Copyright (c) 2022-2026 Micky5991
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -87,5 +173,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 ```

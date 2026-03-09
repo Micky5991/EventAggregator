@@ -14,7 +14,7 @@
         <RepositoryUrl>https://github.com/Micky5991/EventAggregator</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
-        <Copyright>2024 Micky5991</Copyright>
+        <Copyright>2026 Micky5991</Copyright>
         <WarningsAsErrors>true</WarningsAsErrors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
