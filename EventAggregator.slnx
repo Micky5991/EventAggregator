@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Files/">
+    <File Path=".gitignore" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="EventAggregator.OpenTelemetry/EventAggregator.OpenTelemetry.csproj" />
+  <Project Path="EventAggregator.Sample/EventAggregator.Sample.csproj" />
+  <Project Path="EventAggregator.Tests/EventAggregator.Tests.csproj" />
+  <Project Path="EventAggregator/EventAggregator.csproj" />
+</Solution>
