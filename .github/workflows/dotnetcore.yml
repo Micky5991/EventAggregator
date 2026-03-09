@@ -15,7 +15,7 @@ on:
 
 jobs:
   variables:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Create variables
     outputs:
       istag: ${{ steps.vars.outputs.is_tag }}
@@ -36,18 +36,19 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        os: [ macos-26, windows-2025, ubuntu-24.04 ]
 
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup .NET versions
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: |
           8.0.x
           9.0.x
+          10.0.x
 
     - name: Install dependencies
       run: dotnet restore
@@ -64,20 +65,19 @@ jobs:
       run: dotnet test -v normal
 
     - name: Save NuGet artifact
-      if: success() && needs.variables.outputs.istag == 'true' && matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      if: success() && needs.variables.outputs.istag == 'true' && matrix.os == 'ubuntu-24.04'
+      uses: actions/upload-artifact@v7
       with:
         name: nuget-package
         path: EventAggregator/bin/Release/Micky5991.EventAggregator.${{ needs.variables.outputs.ref }}.nupkg
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ variables, build ]
     if: needs.build.result == 'success' && needs.variables.outputs.istag == 'true'
 
     steps:
-
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: nuget-package
           path: artifacts/
