@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -31,7 +31,7 @@ public class EventBaseFixture
     {
         var testEvent = new TestNormalBase();
 
-        testEvent.IsCancellable().Should().BeFalse();
+        testEvent.IsCancellable().ShouldBeFalse();
     }
 
     [TestMethod]
@@ -39,7 +39,7 @@ public class EventBaseFixture
     {
         var testEvent = new TestCancelBase();
 
-        testEvent.IsCancellable().Should().BeTrue();
+        testEvent.IsCancellable().ShouldBeTrue();
     }
 
     [TestMethod]
@@ -47,7 +47,7 @@ public class EventBaseFixture
     {
         var testEvent = new TestCancelableBase();
 
-        testEvent.IsCancellable().Should().BeTrue();
+        testEvent.IsCancellable().ShouldBeTrue();
     }
 
     [TestMethod]
@@ -55,6 +55,6 @@ public class EventBaseFixture
     {
         var testEvent = new FakeCancelBase();
 
-        testEvent.IsCancellable().Should().BeFalse();
+        testEvent.IsCancellable().ShouldBeFalse();
     }
 }

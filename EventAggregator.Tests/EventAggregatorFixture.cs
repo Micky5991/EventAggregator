@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using Shouldly;
 using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Services;
@@ -55,7 +55,7 @@ public class EventAggregatorFixture
     {
         Action act = () => new EventAggregatorService(null);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.ShouldThrow<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -72,8 +72,7 @@ public class EventAggregatorFixture
 
         Action act = () => aggregator.Subscribe<TestEvent>(x => {}, options);
 
-        act.Should()
-            .Throw<InvalidOperationException>().WithMessage($"*{nameof(SynchronizationContext)}*");
+        act.ShouldThrow<InvalidOperationException>().Message.ShouldContain(nameof(SynchronizationContext));
     }
 
     [TestMethod]
@@ -91,7 +90,7 @@ public class EventAggregatorFixture
         var subscription = new EventAggregatorService(_subscriptionLogger)
             .Subscribe<TestEvent>(e => {}, options);
 
-        subscription.Should().NotBeNull();
+        subscription.ShouldNotBeNull();
     }
 
     [TestMethod]
@@ -106,7 +105,7 @@ public class EventAggregatorFixture
 
         Action act = () => new EventAggregatorService(_subscriptionLogger).Subscribe<TestEvent>(e => {}, options);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(SynchronizationContext)}*");
+        act.ShouldThrow<InvalidOperationException>().Message.ShouldContain(nameof(SynchronizationContext));
     }
 
     [TestMethod]
@@ -119,7 +118,7 @@ public class EventAggregatorFixture
             ThreadTarget = ThreadTarget.PublisherThread,
         });
 
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        act.ShouldThrow<ArgumentOutOfRangeException>();
     }
 
     [TestMethod]
@@ -132,7 +131,7 @@ public class EventAggregatorFixture
             ThreadTarget = (ThreadTarget) int.MaxValue,
         });
 
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        act.ShouldThrow<ArgumentOutOfRangeException>();
     }
 
     [TestMethod]
@@ -147,7 +146,7 @@ public class EventAggregatorFixture
 
         Action act = () => _eventAggregator.Subscribe<TestEvent>((IEventAggregator.EventHandlerDelegate<TestEvent>)null, options);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.ShouldThrow<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -162,7 +161,7 @@ public class EventAggregatorFixture
 
         Action act = () => _eventAggregator.Subscribe<TestEvent>((IEventAggregator.AsyncEventHandlerDelegate<TestEvent>)null, options);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.ShouldThrow<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -183,8 +182,8 @@ public class EventAggregatorFixture
 
         var subscription = _eventAggregator.Subscribe<TestEvent>(e => { }, options);
 
-        subscription.Should().NotBeNull();
-        subscription.SubscriptionOptions.EventPriority.Should().Be(eventPriority);
+        subscription.ShouldNotBeNull();
+        subscription.SubscriptionOptions.EventPriority.ShouldBe(eventPriority);
     }
 
     [TestMethod]
@@ -202,8 +201,8 @@ public class EventAggregatorFixture
 
         var subscription = _eventAggregator.Subscribe<TestEvent>(e => { }, options);
 
-        subscription.Should().NotBeNull();
-        subscription.SubscriptionOptions.ThreadTarget.Should().Be(threadTarget);
+        subscription.ShouldNotBeNull();
+        subscription.SubscriptionOptions.ThreadTarget.ShouldBe(threadTarget);
     }
 
     [TestMethod]
@@ -211,7 +210,7 @@ public class EventAggregatorFixture
     {
         Action act = () => _eventAggregator.Publish<TestEvent>(null);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.ShouldThrow<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -231,7 +230,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(sentEvent);
 
-        receivedEvent.Should().BeSameAs(sentEvent);
+        receivedEvent.ShouldBeSameAs(sentEvent);
     }
 
     [TestMethod]
@@ -254,9 +253,10 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new TestEvent());
 
-        calls.Should()
-            .HaveCount(3)
-            .And.Contain(new [] {1, 2, 3});
+        calls.Count.ShouldBe(3);
+        calls.ShouldContain(1);
+        calls.ShouldContain(2);
+        calls.ShouldContain(3);
     }
 
     [TestMethod]
@@ -284,9 +284,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new TestEvent());
 
-        calls.Should()
-            .HaveCount(6)
-            .And.ContainInOrder(1, 2, 3, 4, 5, 6);
+        calls.ShouldBe(new[] { 1, 2, 3, 4, 5, 6 }, ignoreOrder: false);
     }
 
     [TestMethod]
@@ -308,11 +306,9 @@ public class EventAggregatorFixture
 
         Action act = () => _eventAggregator.Publish(new TestEvent());
 
-        act.Should().NotThrow();
+        act.ShouldNotThrow();
 
-        calls.Should()
-            .HaveCount(3)
-            .And.ContainInOrder(1, 2, 3);
+        calls.ShouldBe(new[] { 1, 2, 3 }, ignoreOrder: false);
     }
 
     [TestMethod]
@@ -320,7 +316,7 @@ public class EventAggregatorFixture
     {
         Action act = () => _eventAggregator.Publish(new OtherTestEvent());
 
-        act.Should().NotThrow();
+        act.ShouldNotThrow();
     }
 
     [TestMethod]
@@ -341,8 +337,8 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new OtherTestEvent());
 
-        wrongCalled.Should().BeFalse();
-        rightCalled.Should().BeTrue();
+        wrongCalled.ShouldBeFalse();
+        rightCalled.ShouldBeTrue();
     }
 
     [TestMethod]
@@ -360,7 +356,7 @@ public class EventAggregatorFixture
     {
         Action act = () => _eventAggregator.Unsubscribe(null);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.ShouldThrow<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -383,8 +379,8 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new TestEvent());
 
-        subscription.IsDisposed.Should().BeTrue();
-        calledAmount.Should().Be(1);
+        subscription.IsDisposed.ShouldBeTrue();
+        calledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -403,7 +399,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new CancellableEvent());
 
-        calledAmount.Should().Be(1);
+        calledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -422,7 +418,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new CancellableEvent());
 
-        calledAmount.Should().Be(1);
+        calledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -451,9 +447,9 @@ public class EventAggregatorFixture
 
         var cancelledEvent = _eventAggregator.Publish(new CancellableEvent());
 
-        cancelledEvent.Cancelled.Should().Be(true);
+        cancelledEvent.Cancelled.ShouldBeTrue();
 
-        wrongCalledAmount.Should().Be(0);
+        wrongCalledAmount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -481,9 +477,9 @@ public class EventAggregatorFixture
 
         var cancelledEvent = _eventAggregator.Publish(new CancellableEvent());
 
-        cancelledEvent.Cancelled.Should().Be(true);
+        cancelledEvent.Cancelled.ShouldBeTrue();
 
-        correctCalledAmount.Should().Be(1);
+        correctCalledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -511,7 +507,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(new TestEvent());
 
-        wrongCalledAmount.Should().Be(0);
+        wrongCalledAmount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -545,8 +541,8 @@ public class EventAggregatorFixture
         _eventAggregator.Publish(new TestEvent());
         _eventAggregator.Publish(new TestEvent());
 
-        calledAmount.Should().Be(1);
-        wasDisposed.Should().BeTrue();
+        calledAmount.ShouldBe(1);
+        wasDisposed.ShouldBeTrue();
     }
 
     [TestMethod]
@@ -574,8 +570,8 @@ public class EventAggregatorFixture
         _eventAggregator.Publish(new TestEvent());
         _eventAggregator.Publish(new TestEvent());
 
-        calledAmount.Should().Be(2);
-        innerCalledAmount.Should().Be(1);
+        calledAmount.ShouldBe(2);
+        innerCalledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -592,7 +588,7 @@ public class EventAggregatorFixture
 
         Action act = () => _eventAggregator.Subscribe<DataChangingEvent>(_ => { }, options);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
+        act.ShouldThrow<InvalidOperationException>().Message.ShouldContain(nameof(IDataChangingEvent));
     }
 
     [TestMethod]
@@ -612,7 +608,7 @@ public class EventAggregatorFixture
 
         _eventAggregator.Publish(eventData);
 
-        calledAmount.Should().Be(1);
+        calledAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -627,14 +623,13 @@ public class EventAggregatorFixture
 
         var subscription = _eventAggregator.Subscribe<TestEvent>(_ => Task.CompletedTask, options);
 
-        subscription.IsDisposed.Should().BeFalse();
-        subscription.SubscriptionOptions.EventPriority.Should().Be(EventPriority.Normal);
-        subscription.SubscriptionOptions.IgnoreCancelled.Should().BeFalse();
-        subscription.SubscriptionOptions.ThreadTarget.Should().Be(ThreadTarget.PublisherThread);
+        subscription.IsDisposed.ShouldBeFalse();
+        subscription.SubscriptionOptions.EventPriority.ShouldBe(EventPriority.Normal);
+        subscription.SubscriptionOptions.IgnoreCancelled.ShouldBeFalse();
+        subscription.SubscriptionOptions.ThreadTarget.ShouldBe(ThreadTarget.PublisherThread);
 
-        subscription.Should()
-            .NotBeNull()
-            .And.BeAssignableTo<ISubscription>();
+        subscription.ShouldNotBeNull();
+        subscription.ShouldBeAssignableTo<ISubscription>();
     }
 
     [TestMethod]
@@ -662,6 +657,6 @@ public class EventAggregatorFixture
 
         await Task.Delay(TimeSpan.FromSeconds(1));
 
-        calledAmount.Should().Be(1);
+        calledAmount.ShouldBe(1);
     }
 }
