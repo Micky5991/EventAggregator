@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using FluentAssertions;
+using Shouldly;
 using Micky5991.EventAggregator.Elements;
 using Micky5991.EventAggregator.Interfaces;
 using Micky5991.EventAggregator.Tests.TestClasses;
@@ -133,11 +133,11 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => unsubscribed = true);
 
-        called.Should().BeFalse();
-        unsubscribed.Should().BeFalse();
-        subscription.IsDisposed.Should().BeFalse();
-        subscription.Type.Should().Be(typeof(TestEvent));
-        subscription.SubscriptionOptions.IgnoreCancelled.Should().BeFalse();
+        called.ShouldBeFalse();
+        unsubscribed.ShouldBeFalse();
+        subscription.IsDisposed.ShouldBeFalse();
+        subscription.Type.ShouldBe(typeof(TestEvent));
+        subscription.SubscriptionOptions.IgnoreCancelled.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -163,7 +163,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => {});
 
-        subscription.SubscriptionOptions.EventPriority.Should().Be(priority);
+        subscription.SubscriptionOptions.EventPriority.ShouldBe(priority);
     }
 
     [TestMethod]
@@ -186,7 +186,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => {});
 
-        subscription.SubscriptionOptions.ThreadTarget.Should().Be(threadTarget);
+        subscription.SubscriptionOptions.ThreadTarget.ShouldBe(threadTarget);
     }
 
     [TestMethod]
@@ -208,7 +208,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => {});
 
-        subscription.SubscriptionOptions.IgnoreCancelled.Should().Be(ignoreCancelled);
+        subscription.SubscriptionOptions.IgnoreCancelled.ShouldBe(ignoreCancelled);
     }
 
     [TestMethod]
@@ -228,7 +228,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => { });
 
-        act.Should().Throw<ArgumentNullException>().WithMessage("*handler*");
+        act.ShouldThrow<ArgumentNullException>().Message.ShouldContain("handler");
     }
 
     [TestMethod]
@@ -248,7 +248,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             null);
 
-        act.Should().Throw<ArgumentNullException>().WithMessage("*unsubscribeAction*");
+        act.ShouldThrow<ArgumentNullException>().Message.ShouldContain("unsubscribeAction");
     }
 
     [TestMethod]
@@ -268,15 +268,15 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => { });
 
-        act.Should().Throw<ArgumentNullException>().WithMessage("*logger*");
+        act.ShouldThrow<ArgumentNullException>().Message.ShouldContain("logger");
     }
 
     [TestMethod]
     public void InvokingEventWithNullThrowsArgumentNullException()
     {
-        Action act = () => _publisherThreadSubscription.Invoke(null);
+        var act = () => _publisherThreadSubscription.Invoke(null);
 
-        act.Should().Throw<ArgumentNullException>("*eventInstance*");
+        act.ShouldThrow<ArgumentNullException>().Message.ShouldContain("eventInstance");
     }
 
     [TestMethod]
@@ -284,8 +284,8 @@ public class SubscriptionFixture
     {
         _publisherThreadSubscription.Dispose();
 
-        _subscribeStatus.Should().BeFalse();
-        _publisherThreadSubscription.IsDisposed.Should().BeTrue();
+        _subscribeStatus.ShouldBeFalse();
+        _publisherThreadSubscription.IsDisposed.ShouldBeTrue();
     }
 
     [TestMethod]
@@ -293,11 +293,11 @@ public class SubscriptionFixture
     {
         _publisherThreadSubscription.Dispose();
 
-        Action actDispose = () => _publisherThreadSubscription.Dispose();
-        actDispose.Should().Throw<ObjectDisposedException>();
+        var actDispose = () => _publisherThreadSubscription.Dispose();
+        actDispose.ShouldThrow<ObjectDisposedException>();
 
-        Action actInvoke = () => _publisherThreadSubscription.Invoke(new TestEvent());
-        actInvoke.Should().Throw<ObjectDisposedException>();
+        var actInvoke = () => _publisherThreadSubscription.Invoke(new TestEvent());
+        actInvoke.ShouldThrow<ObjectDisposedException>();
     }
 
     [TestMethod]
@@ -315,7 +315,7 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => { });
 
-        act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*threadTarget*");
+        act.ShouldThrow<ArgumentOutOfRangeException>().Message.ShouldContain("threadTarget");
     }
 
     [TestMethod]
@@ -325,7 +325,7 @@ public class SubscriptionFixture
 
         _publisherThreadSubscription.Invoke(eventData);
 
-        _passedEvent.Should().Be(eventData);
+        _passedEvent.ShouldBe(eventData);
     }
 
     [TestMethod]
@@ -333,9 +333,9 @@ public class SubscriptionFixture
     {
         var eventData = new OtherTestEvent();
 
-        Action act = () => _publisherThreadSubscription.Invoke(eventData);
+        var act = () => _publisherThreadSubscription.Invoke(eventData);
 
-        act.Should().Throw<ArgumentException>();
+        act.ShouldThrow<ArgumentException>();
     }
 
     [TestMethod]
@@ -350,7 +350,7 @@ public class SubscriptionFixture
             _publisherThreadSubscription.Invoke(new TestEvent());
         }
 
-        _handleCounter.Should().Be(amount);
+        _handleCounter.ShouldBe(amount);
     }
 
     [TestMethod]
@@ -358,7 +358,7 @@ public class SubscriptionFixture
     {
         _mainThreadSubscription.Invoke(new TestEvent());
 
-        _synchronizationContext.InvokeAmount.Should().Be(1);
+        _synchronizationContext.InvokeAmount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -366,7 +366,7 @@ public class SubscriptionFixture
     {
         _publisherThreadSubscription.Invoke(new TestEvent());
 
-        _synchronizationContext.InvokeAmount.Should().Be(0);
+        _synchronizationContext.InvokeAmount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -374,7 +374,7 @@ public class SubscriptionFixture
     {
         _backgroundThreadSubscription.Invoke(new TestEvent());
 
-        _synchronizationContext.InvokeAmount.Should().Be(0);
+        _synchronizationContext.InvokeAmount.ShouldBe(0);
     }
 
     [TestMethod]
@@ -382,14 +382,14 @@ public class SubscriptionFixture
     {
         _handleAction = () => throw new Exception("Test");
 
-        Action act = () => _publisherThreadSubscription.Invoke(new TestEvent());
-        act.Should().NotThrow();
+        var act = () => _publisherThreadSubscription.Invoke(new TestEvent());
+        act.ShouldNotThrow();
 
-        Action mainAct = () => _mainThreadSubscription.Invoke(new TestEvent());
-        mainAct.Should().NotThrow();
+        var mainAct = () => _mainThreadSubscription.Invoke(new TestEvent());
+        mainAct.ShouldNotThrow();
 
-        Action backgroundAct = () => _backgroundThreadSubscription.Invoke(new TestEvent());
-        backgroundAct.Should().NotThrow();
+        var backgroundAct = () => _backgroundThreadSubscription.Invoke(new TestEvent());
+        backgroundAct.ShouldNotThrow();
     }
 
     [TestMethod]
@@ -416,8 +416,8 @@ public class SubscriptionFixture
 
         subscription.Invoke(eventData);
 
-        eventData.Number.Should().Be(2);
-        eventData.NumberChangeAmount.Should().Be(2);
+        eventData.Number.ShouldBe(2);
+        eventData.NumberChangeAmount.ShouldBe(2);
     }
 
     [TestMethod]
@@ -439,18 +439,19 @@ public class SubscriptionFixture
             _synchronizationContext,
             () => { });
 
-        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(IDataChangingEvent)}*");
+        act.ShouldThrow<InvalidOperationException>().Message.ShouldContain(nameof(IDataChangingEvent));
     }
 
     [TestMethod]
     public void CancellableEventInterfacesImplementsRightInterfaces()
     {
-        typeof(ICancellableEvent).Should().Implement<IEvent>().And.Implement<IDataChangingEvent>();
+        typeof(IEvent).IsAssignableFrom(typeof(ICancellableEvent)).ShouldBeTrue();
+        typeof(IDataChangingEvent).IsAssignableFrom(typeof(ICancellableEvent)).ShouldBeTrue();
     }
 
     [TestMethod]
     public void DataChangingEventInterfacesImplementsRightInterfaces()
     {
-        typeof(IDataChangingEvent).Should().Implement<IEvent>();
+        typeof(IEvent).IsAssignableFrom(typeof(IDataChangingEvent)).ShouldBeTrue();
     }
 }
